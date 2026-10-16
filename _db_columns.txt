@@ -1,0 +1,32 @@
+# COLUMN PRESENCE CHECK (existing tables vs Excel headers)
+project: https://rihxlxjxnbobgwdzwqtp.supabase.co
+
+## dim_university: 6/7 expected columns present
+   MISSING columns: tier_rank
+
+## dim_program: 15/15 expected columns present
+   (all expected columns present)
+
+## dim_student: 25/26 expected columns present
+   MISSING columns: data_batch
+
+## fact_exam_score: 20/24 expected columns present
+   MISSING columns: registered_subjects, absent_subjects, exempt_subjects, failing_subjects
+
+## fact_cutoff_score: 21/21 expected columns present
+   (all expected columns present)
+
+## fact_quota: 13/13 expected columns present
+   (all expected columns present)
+
+## fact_tuition: 12/16 expected columns present
+   MISSING columns: amount_min, amount_max, unit, source_url
+
+## fact_employment: 14/14 expected columns present
+   (all expected columns present)
+
+## fact_labor_demand: 8/10 expected columns present
+   MISSING columns: source_name, source_url
+
+## main_dataset: 42/42 expected columns present
+   (all expected columns present)

@@ -1,0 +1,275 @@
+# SUPABASE REST INTROSPECTION
+project: https://rihxlxjxnbobgwdzwqtp.supabase.co
+root status: 200
+
+## EXPOSED RELATIONS (public, visible to anon): 11
+- dim_program
+- dim_student
+- dim_university
+- fact_cutoff_score
+- fact_employment
+- fact_exam_score
+- fact_labor_demand
+- fact_quota
+- fact_salary
+- fact_tuition
+- main_dataset
+
+## COLUMNS & KEY NOTES
+
+### dim_program
+  - program_id character varying  [NOT NULL, PK]
+  - university_code character varying  [NOT NULL, FK->dim_university.university_code]
+  - major_code character varying
+  - admission_code character varying
+  - major_name character varying  [NOT NULL]
+  - program_type character varying
+  - khoi_nganh character varying
+  - khoi_nganh_name character varying
+  - industry_group character varying
+  - subject_combinations text
+  - holland_code character varying
+  - duration_years numeric
+  - note text
+  - created_at timestamp with time zone
+  - updated_at timestamp with time zone
+  - years_offered text
+  - in_simulation boolean
+  - source_version text
+
+### dim_student
+  - student_id character varying  [NOT NULL, PK]
+  - cohort_year int32  [NOT NULL]
+  - profile_created_date date  [NOT NULL]
+  - gender character varying  [NOT NULL]
+  - priority_area character varying  [NOT NULL]
+  - priority_bonus_base numeric  [NOT NULL]
+  - high_school_type character varying  [NOT NULL]
+  - subject_track character  [NOT NULL]
+  - interest_industry character varying  [NOT NULL]
+  - holland_code character  [NOT NULL]
+  - gpa_grade10 numeric  [NOT NULL]
+  - gpa_grade11 numeric  [NOT NULL]
+  - gpa_grade12 numeric  [NOT NULL]
+  - ielts_score numeric
+  - tsa_score numeric
+  - hsa_score numeric
+  - spt_score numeric
+  - family_budget_vnd_year int64  [NOT NULL]
+  - n_test_types int32  [NOT NULL]
+  - admitted_nv_order int32
+  - admitted_program_id character varying
+  - admitted_by_method character varying
+  - n_nv int32  [NOT NULL]
+  - n_universities_applied int32  [NOT NULL]
+  - admission_status character varying  [NOT NULL]
+  - candidate_type character varying  [NOT NULL]
+  - thpt_graduation_year int32
+  - is_thpt_graduated boolean  [NOT NULL]
+  - exam_status character varying  [NOT NULL]
+  - special_case character varying  [NOT NULL]
+  - case_note character varying
+
+### dim_university
+  - university_code character varying  [NOT NULL, PK]
+  - university_name character varying  [NOT NULL]
+  - short_name character varying
+  - tier character varying
+  - field_focus character varying
+  - admission_website text
+  - created_at timestamp with time zone
+  - updated_at timestamp with time zone
+
+### fact_cutoff_score
+  - cutoff_id character varying  [NOT NULL, PK]
+  - program_id character varying  [NOT NULL, FK->dim_program.program_id]
+  - university_code character varying  [NOT NULL, FK->dim_university.university_code]
+  - admission_year int32  [NOT NULL]
+  - announce_date date
+  - admission_method character varying
+  - method_group character varying
+  - subject_combination character varying
+  - cutoff_score numeric
+  - score_scale numeric
+  - scale_confirmed boolean
+  - cutoff_score_30 numeric
+  - n_sources_agree int32
+  - confidence character varying
+  - source_type character varying
+  - created_at timestamp with time zone
+  - announce_date_is_approx boolean
+  - is_missing boolean
+  - source_url text
+  - note text
+  - published_code text
+  - data_version text
+
+### fact_employment
+  - employment_id character varying  [NOT NULL, PK]
+  - program_id character varying  [NOT NULL, FK->dim_program.program_id]
+  - university_code character varying  [NOT NULL, FK->dim_university.university_code]
+  - graduation_year int32
+  - survey_year int32
+  - employment_rate_pct numeric
+  - n_graduates int32
+  - source_type character varying
+  - survey_date date
+  - granularity character varying
+  - created_at timestamp with time zone
+  - program_label text
+  - n_responses int32
+  - note text
+  - source_url text
+
+### fact_exam_score
+  - score_id character varying  [NOT NULL, PK]
+  - student_id character varying  [NOT NULL]
+  - exam_year int32
+  - exam_date date
+  - score_math numeric
+  - score_physics numeric
+  - score_chemistry numeric
+  - score_biology numeric
+  - score_literature numeric
+  - score_history numeric
+  - score_geography numeric
+  - score_english numeric
+  - hb_math numeric
+  - hb_physics numeric
+  - hb_chemistry numeric
+  - hb_biology numeric
+  - hb_literature numeric
+  - hb_history numeric
+  - hb_geography numeric
+  - hb_english numeric
+  - created_at timestamp with time zone
+
+### fact_labor_demand
+  - demand_id character varying  [NOT NULL, PK]
+  - industry_group character varying  [NOT NULL]
+  - period_end_year int32
+  - metric character varying
+  - value numeric
+  - unit character varying
+  - note text
+  - period_end_date date
+  - created_at timestamp with time zone
+  - updated_at timestamp with time zone
+
+### fact_quota
+  - quota_id character varying  [NOT NULL, PK]
+  - program_id character varying  [NOT NULL]
+  - university_code character varying  [NOT NULL, FK->dim_university.university_code]
+  - admission_year int32  [NOT NULL]
+  - plan_date date
+  - admission_method character varying
+  - quota int32
+  - source_type character varying
+  - quota_scope character varying
+  - created_at timestamp with time zone
+  - note character varying
+  - source_url text
+  - published_code text
+  - data_version text
+
+### fact_salary
+  - salary_id character varying  [NOT NULL, PK]
+  - industry_group character varying  [NOT NULL]
+  - reference_year int32
+  - experience_level character varying
+  - salary_min_vnd_month numeric
+  - salary_max_vnd_month numeric
+  - salary_avg_vnd_month numeric
+  - source_name character varying
+  - salary_point_vnd_month numeric
+  - is_fresher boolean
+  - is_public_pay_scale boolean
+  - reference_date date
+  - note text
+  - created_at timestamp with time zone
+  - updated_at timestamp with time zone
+
+### fact_tuition
+  - tuition_id character varying  [NOT NULL, PK]
+  - university_code character varying  [NOT NULL, FK->dim_university.university_code]
+  - program_id character varying
+  - granularity character varying
+  - academic_year character varying
+  - academic_year_start_date date
+  - tuition_min_vnd_year int64
+  - tuition_max_vnd_year int64
+  - tuition_mid_vnd_year int64
+  - is_converted_from_credit boolean
+  - source_type character varying
+  - note text
+  - created_at timestamp with time zone
+
+### main_dataset
+  - application_id character varying  [NOT NULL, PK]
+  - student_id character varying  [NOT NULL]
+  - program_id character varying  [NOT NULL, FK->dim_program.program_id]
+  - university_code character varying  [NOT NULL, FK->dim_university.university_code]
+  - cohort_year int32  [NOT NULL]
+  - registration_date date
+  - result_date date
+  - nv_order int32  [NOT NULL]
+  - ref_cutoff_30 numeric
+  - n_methods_evaluated int32
+  - n_methods_eligible int32
+  - best_method character varying
+  - best_margin_30 numeric
+  - is_eligible boolean
+  - is_admitted boolean
+  - holland_match_pct numeric
+  - family_budget_vnd_year int64
+  - first_year_tuition_vnd int64
+  - living_support_vnd_year int64
+  - est_total_cost_vnd int64
+  - affordability_index_pct numeric
+  - scholarship_eligibility_score numeric
+  - created_at timestamp with time zone
+  - updated_at timestamp with time zone
+  - major_code text
+  - major_name text
+  - gender text
+  - khoi_nganh text
+  - industry_group text
+  - priority_area text
+  - high_school_type text
+  - subject_track text
+  - interest_industry text
+  - holland_code text
+  - program_holland_code text
+  - n_test_types int32
+  - duration_years int32
+  - tuition_is_imputed boolean
+  - candidate_type text
+  - exam_status text
+  - is_thpt_graduated boolean
+  - score_eligible numeric
+  - not_admitted_reason text
+  - combo_is_assumed boolean
+
+## ROW COUNTS vs EXPECTED
+- dim_program: count=380 status=206  (matches expected)
+- dim_student: count=500 status=206  (matches expected)
+- dim_university: count=7 status=206  (matches expected)
+- fact_application: count=n/a status=404 | HTTP 404 {"code":"PGRST205","details":null,"hint":null,"message":"Could not find the table 'public.fact_application' in the schema cache"}  <== MISSING (not in API)
+- fact_application_method: count=n/a status=404 | HTTP 404 {"code":"PGRST205","details":null,"hint":null,"message":"Could not find the table 'public.fact_application_method' in the schema cache"}  <== MISSING (not in API)
+- fact_cutoff_forecast: count=n/a status=404 | HTTP 404 {"code":"PGRST205","details":null,"hint":null,"message":"Could not find the table 'public.fact_cutoff_forecast' in the schema cache"}  <== MISSING (not in API)
+- fact_cutoff_score: count=0 status=200  <== expected ~2939 (diff -2939)
+- fact_employment: count=34 status=206
+- fact_exam_score: count=200 status=206
+- fact_labor_demand: count=22 status=206
+- fact_quota: count=1418 status=206  <== expected ~1366 (diff +52)
+- fact_salary: count=35 status=206
+- fact_tuition: count=63 status=206
+- main_dataset: count=3096 status=206
+- v_coverage_real: count=n/a status=404 | HTTP 404 {"code":"PGRST205","details":null,"hint":null,"message":"Could not find the table 'public.v_coverage_real' in the schema cache"}  <== MISSING (not in API)
+- v_coverage_sim: count=n/a status=404 | HTTP 404 {"code":"PGRST205","details":null,"hint":null,"message":"Could not find the table 'public.v_coverage_sim' in the schema cache"}  <== MISSING (not in API)
+- v_main_dataset: count=n/a status=404 | HTTP 404 {"code":"PGRST205","details":null,"hint":"Perhaps you meant the table 'public.main_dataset'","message":"Could not find the table 'public.v_main_dataset' in the   <== MISSING (not in API)
+- v_student_outcome: count=n/a status=404 | HTTP 404 {"code":"PGRST205","details":null,"hint":null,"message":"Could not find the table 'public.v_student_outcome' in the schema cache"}  <== MISSING (not in API)
+
+## COVERAGE vs EXCEL CANONICAL TABLES
+MISSING (in Excel package, not exposed by API): fact_application, fact_application_method, fact_cutoff_forecast, v_main_dataset, v_student_outcome, v_coverage_real, v_coverage_sim
+EXTRA (exposed but not in Excel canonical set): fact_salary, main_dataset

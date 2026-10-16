@@ -1,0 +1,457 @@
+=== SHEETS ===
+  - README
+  - Data_Dictionary
+  - Source_Log
+  - main_dataset
+  - Case_Summary
+  - student_outcome
+  - KPI_Sheet
+  - application_method
+  - application
+  - student
+  - score
+  - cutoff_score
+  - quota
+  - tuition
+  - employment
+  - labor_demand
+  - cutoff_forecast
+  - program
+  - university
+
+########## SHEET: README ##########
+total_rows=1000
+  r0: DSS TƯ VẤN TUYỂN SINH & HƯỚNG NGHIỆP – DATA PACKAGE v5 – ĐÃ LỌC (ASSIGNMENT 1, NHÓM 5)
+  r1: Phạm vi: FULL danh mục 380 ngành/chương trình của 7 trường ĐH tại Hà Nội, 7 khối ngành (I–VII); năm tuyển sinh 2023–2026. Thu thập: 2026-10-07.
+  r2: Các trường (top → thấp): 1. HUST – Đại học Bách khoa Hà Nội (Top 1): 71 ngành; 2. NEU – Đại học Kinh tế Quốc dân (Top 1): 88 ngành; 3. HMU – Trường Đại học Y Hà Nội (Top 1): 20 ngành; 4. HNUE – Trường Đại học Sư phạm Hà Nội (Nhóm khá): 57 ngành; 5. HaUI – Trường Đại học Công nghiệp Hà Nội (Nhóm trung bình): 72 ngành; 6. TLU – Trường Đại học Thủy lợi (Nhóm trung bình – thấp): 48 ngành; 7. VNUA – Học viện Nông nghiệp Việt Nam (Nhóm thấp): 24 ngành
+  r3: 
+  r4: 1. ĐỘ PHỦ (coverage)
+  r5: • 1292 ô ngành × năm có tuyển sinh; 1273 ô (98.5%) có điểm chuẩn chính (THPT hoặc quy đổi chung). Ô còn thiếu: BKA_MS5 (2024), BKA_MS5 (2025), DCN_7340101TA (2026), DCN_7340115TA (2026), DCN_7340201TA (2026), DCN_7340301TA (2026), DCN_7480101TA (2026), DCN_7480201TA (2026), DCN_7510201TA (2026), DCN_7510203TA (2026), DCN_7510205TA (2026), DCN_7510301TA (2026), DCN_7510302TA (2026), DCN_7810101TA (2026), DCN_7810103TA (2026), DCN_7810201TA (2026), DCN_7810202TA (2026), TLA_TLA129 (2026), TLA_TLA205 (2023).
+  r6: • Dữ liệu mô phỏng v4: 500 HS, 3,096 NV, 4,587 dòng NV × phương thức; NV phủ 1291/1292 ô ngành × năm có tuyển sinh và 380/380 ngành (ô chưa có NV: BKA_MS5 (2025)).
+  r7: 
+  r8: 2. ĐỘ BỘI (multiplicity)
+  r9: • Nhiều phương thức: 2,939 dòng điểm chuẩn thuộc 13 loại phương thức; 842/1292 ô ngành × năm có ≥ 2 phương thức.
+  r10: • Nhiều nguyện vọng: mỗi HS mô phỏng 3–10 NV; mỗi NV xét bằng mọi phương thức đủ điều kiện → fact_application_method.
+  r11: • Kiểm chứng chéo: n_sources_agree + confidence trên từng dòng; 49 ngành gốc được đối chiếu lại bằng đợt thu thập v3 (ghi chú 'v3 khớp' hoặc 'v3 ghi …').
+  r12: 
+  r13: 3. QUAN HỆ BẢNG (mô hình sao)
+  r14: dim_university ─< dim_program ─< fact_cutoff_score / fact_quota / fact_cutoff_forecast / fact_employment ; dim_student ─< fact_exam_score, fact_application ─< fact_application_method >─ fact_cutoff_score
+  r15: Sheet bắt đầu bằng v_ là VIEW dẫn xuất (trong SQL là CREATE VIEW, không lưu dữ liệu): v_main_dataset, v_student_outcome, v_coverage_real, v_coverage_sim.
+  r16: fact_application_method.cutoff_id → fact_cutoff_score.cutoff_id (trống ở TUYEN_THANG) ; fact_application.program_id → dim_program ; fact_application.student_id → dim_student
+  r17: fact_tuition: theo university_code + năm (ALL = toàn trường) hoặc program_id ; fact_salary, fact_labor_demand: theo industry_group
+  r18: 
+  r19: 4. THẬT vs MÔ PHỎNG
+
+########## SHEET: Data_Dictionary ##########
+total_rows=1000
+  r0: table_name | column_name | key | meaning | data_type | example_value | row_count | missing_count | notes_special_cases
+  r1: v_main_dataset | application_id | PK | Mã nguyện vọng | Text | APP00001 | 3096.0 | 0.0 | APP#####
+  r2: v_main_dataset | student_id | FK | Mã học sinh | Text | HS2023001 | 3096.0 | 0.0 | HS + năm + STT
+  r3: v_main_dataset | cohort_year |  | Năm tuyển sinh của HS | Integer | 2023 | 3096.0 | 0.0 | 2023–2026
+  r4: v_main_dataset | registration_date |  | Ngày đăng ký NV | Date | 2023-07-15 | 3096.0 | 0.0 | Ngẫu nhiên trong cửa sổ đăng ký của Bộ GD&ĐT (2026: giả định 15–28/7)
+  r5: v_main_dataset | result_date |  | Ngày công bố điểm chuẩn | Date | 2023-08-22 | 3096.0 | 0.0 | 
+  r6: v_main_dataset | nv_order |  | Thứ tự nguyện vọng | Integer | 1 | 3096.0 | 0.0 | 1 = ưu tiên cao nhất; tối đa 10
+  r7: v_main_dataset | program_id | FK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | DCN_7480103 | 3096.0 | 0.0 | Khóa nối dim_program
+  r8: v_main_dataset | university_code | FK | Mã trường (Bộ GD&ĐT) | Text | DCN | 3096.0 | 0.0 | BKA, KHA, YHB, SPH, DCN, TLA, HVN
+  r9: v_main_dataset | major_code |  | Mã ngành 7 chữ số | Text | 7480103 | 3096.0 | 750.0 | 
+  r10: v_main_dataset | major_name |  | Tên ngành | Text | Kỹ thuật phần mềm | 3096.0 | 0.0 | 
+  r11: v_main_dataset | khoi_nganh |  | Khối ngành theo phân loại Bộ GD&ĐT | Text | V | 3096.0 | 0.0 | I, III, IV, V, VI, VII
+  r12: v_main_dataset | industry_group |  | Nhóm nghề – khóa nối dữ liệu lương/nhu cầu | Text | CNTT | 3096.0 | 0.0 | 20 nhóm
+  r13: v_main_dataset | ref_cutoff_30 |  | Điểm chuẩn HS tham khảo khi đặt NV (năm trước, thang 30) | Decimal | 25.32 | 3096.0 | 0.0 | Khóa 2023 dùng điểm 2023 ± nhiễu (không có 2022 trong gói)
+  r14: v_main_dataset | n_methods_evaluated |  | Số phương thức NV này được xét | Integer | 1 | 3096.0 | 0.0 | Độ bội phương thức
+  r15: v_main_dataset | n_methods_eligible |  | Số phương thức đủ điểm | Integer | 0 | 3096.0 | 0.0 | 
+  r16: v_main_dataset | best_method |  | Phương thức cho biên điểm tốt nhất | Text | THPT | 3096.0 | 33.0 | QUY_DOI_CHUNG(TSA) = quy đổi từ TSA
+  r17: v_main_dataset | best_margin_30 |  | Biên điểm tốt nhất (quy về thang 30) | Decimal | -0.61 | 3096.0 | 33.0 | ≥ 0 là đủ điểm
+  r18: v_main_dataset | is_eligible |  | NV đủ điều kiện trúng tuyển | Boolean | False | 3096.0 | 0.0 | score_eligible VÀ đã tốt nghiệp THPT
+  r19: v_main_dataset | is_admitted |  | Trúng tuyển NV này | Boolean | False | 3096.0 | 0.0 | NV đủ điểm có thứ tự nhỏ nhất
+
+########## SHEET: Source_Log ##########
+total_rows=1000
+  r0: source_id | source_name | publisher_type | used_in_tables | collection_method | time_coverage | update_frequency | format | granularity | fields_provided | limitations_quality_risks | access_date | usage_constraints
+  r1: S01 | Điểm chuẩn, chỉ tiêu, học phí, việc làm – ĐH Bách khoa HN | Tuổi Trẻ, Báo Chính phủ, Đại biểu Nhân dân, tuyensinhso, tuyensinh247; đề án/thông tin tuyển sinh HUST (bản lưu) | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web, đọc PDF, nhập tay, đối chiếu chéo | 2023–2026 | Hàng năm | HTML/PDF → CSV | Ngành × năm × phương thức | THPT, TSA, quy đổi chung, XTTN; chỉ tiêu; học phí; tỷ lệ việc làm | Trang ts.hust.edu.vn không truy cập được; nhiều năm chỉ 1 nguồn tổng hợp; 2024 BF1 TSA nghi vấn | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r2: S02 | Điểm chuẩn, chỉ tiêu, học phí – ĐH Kinh tế Quốc dân | Tiền Phong, Vietbao, Đại biểu Nhân dân, Dân trí, tuyensinh247, tuyensinhso | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web, nhập tay | 2023–2026 | Hàng năm | HTML → CSV | Ngành × năm × phương thức | THPT, quy đổi chung, HSA, TSA, SAT | HTTTQL 2023–2024 thang 40; chỉ tiêu 2026 độ tin cậy thấp; học phí chỉ theo khoảng | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r3: S03 | Điểm chuẩn, chỉ tiêu, học phí, việc làm – ĐH Y Hà Nội | VnExpress, VOV, Tiền Phong, SGGP, huongnghiepviet, tuyensinh247; đề án 2024 (bản lưu) | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web, đọc PDF | 2023–2026 | Hàng năm | HTML/PDF → CSV | Ngành × năm × phương thức × tổ hợp | THPT, kết hợp CCNN, SPT; học phí theo ngành | hmu.edu.vn không truy cập được; thang SPT 2026 chưa xác nhận | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r4: S04 | Điểm chuẩn, chỉ tiêu, chính sách học phí – ĐH Sư phạm HN | Thông báo chính thức HNUE 2026, VietnamPlus, Giáo dục VN, Tiền Phong, Tuổi Trẻ | fact_cutoff_score, fact_quota, fact_tuition | Tra cứu web | 2023–2026 | Hàng năm | HTML → CSV | Ngành × năm × tổ hợp × phương thức | THPT theo tổ hợp, SPT, XTTH, quy đổi chung; NĐ 116 | 2025 một số giá trị chênh 0,01–0,07 giữa nguồn; thiếu tỷ lệ việc làm | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r5: S05 | Điểm chuẩn, chỉ tiêu, học phí, việc làm – ĐH Công nghiệp HN | Tin chính thức HaUI 2026, đề án 2024 (bản lưu), Đại biểu Nhân dân, hocmai, fptshop, tuyensinh247 | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web, đọc PDF | 2023–2026 | Hàng năm | HTML/PDF → CSV | Ngành × năm × phương thức | THPT, học bạ, kết hợp, HSA/TSA (2024), quy đổi chung | Thang HSA/TSA 2024 chưa xác nhận; việc làm theo lĩnh vực | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r6: S06 | Điểm chuẩn, chỉ tiêu, học phí, việc làm – ĐH Thủy lợi | VnExpress, VietNamNet, Đại biểu Nhân dân, trangedu, tuyensinhso, tuyensinh247, tlu.edu.vn | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web | 2023–2026 | Hàng năm | HTML → CSV | Ngành × năm × phương thức | THPT, học bạ, TSA (2026) | Nhiều dòng 1 nguồn (trangedu); học phí theo tín chỉ | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r7: S07 | Điểm chuẩn, chỉ tiêu, học phí, việc làm – Học viện Nông nghiệp VN | Báo Chính phủ, VnExpress, Báo Hà Tĩnh, tuyensinh247; QĐ học phí 3228/2025 (chính thức); vnua.edu.vn | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web, đọc PDF | 2023–2026 | Hàng năm | HTML/PDF → CSV | Nhóm ngành × năm × phương thức | THPT, học bạ | Xét theo nhóm ngành (HVN03 gồm 2 ngành); việc làm chỉ toàn trường | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r8: S08 | Lương khởi điểm theo nhóm ngành | JobsGO, JobOKO, ITviec, TopDev, Navigos, khảo sát ĐHQG TP.HCM; NĐ 73/2024, NĐ 161/2026, NQ 261/2025 | fact_salary | Tra cứu báo cáo, nhập tay; quy đổi USD 25.000 | 2023–2026 | Hàng năm/liên tục | HTML → CSV | Nhóm ngành × cấp kinh nghiệm × năm | Lương min/max/TB | Lương tin tuyển dụng ≠ lương thực trả; mẫu nhỏ ở vài nghề; xu hướng nhiều năm chỉ có ở CNTT | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r9: S09 | Nhu cầu nhân lực & xu hướng tuyển dụng | TopCV, TopDev, Falmi TP.HCM, Bộ GD&ĐT, Bộ LĐTBXH, QĐ 1017/QĐ-TTg | fact_labor_demand | Tra cứu web | 2024–2030 | Hàng năm | HTML → CSV | Nhóm ngành × năm | Tỷ trọng nhu cầu, thiếu hụt, tăng trưởng | Chỉ số khác định nghĩa giữa nguồn; Falmi là TP.HCM | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r10: S10 | Chỉ số vĩ mô thị trường lao động | Tổng cục/Cục Thống kê, World Bank WDI | fact_macro_labor | Tra cứu web/API | 2023–2026 | Quý/năm | HTML/JSON → CSV | Toàn quốc × năm | Thất nghiệp, thu nhập, lương cơ sở | Không tách riêng trình độ đại học (WDI gồm cả cao đẳng) | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r11: S11 | Học sinh, điểm thi, nguyện vọng, xét đa phương thức (MÔ PHỎNG) | Nhóm 5 – scripts/simulate_students.py (200 HS, seed 2026) + scripts/simulate_v4_extra.py (300 HS, seed 2027) | dim_student, fact_exam_score, fact_application, fact_application_method (+ VIEW v_main_dataset, v_student_outcome, v_coverage_sim) | Sinh dữ liệu có kiểm soát, chấm bằng điểm chuẩn THẬT (S01–S07) | Khóa 2023–2026 (500 HS = 200 v2 + 300 v4, seed 2026/2027) | Theo mùa tuyển sinh | CSV/XLSX | HS; NV; NV × phương thức | Xem Data_Dictionary | Không phải dữ liệu thật; phân phối điểm, hành vi chọn NV và tỷ lệ case đặc biệt là giả định | 2026-10-07 | Tự tạo
+  r12: S13 | Danh mục FULL ngành + điểm chuẩn đa phương thức (bổ sung v3) | tuyensinh247 (diemthi), baohatinh, vietnamplus, tuyensinhso, trangedu, hoatieu, fptshop/viettelstore, vietbao, cellphones; thông báo/đề án chính thức các trường (tuyensinh.hnue.edu.vn, hust.edu.vn, thongtintuyensinh.vn, xaydungchinhsach.chinhphu.vn, vnua.edu.vn) | dim_program, map_admission_code, dim_program_member_major, fact_cutoff_score, fact_quota | Tra cứu web theo từng trường, nhập tay, đối chiếu ≥2 nguồn khi có | 2023–2026 | Hàng năm | HTML/PDF → CSV | Ngành × năm × phương thức × tổ hợp | Mã xét tuyển, tên ngành, loại CT, tổ hợp, điểm chuẩn mọi phương thức, chỉ tiêu | Nhiều bảng dạng ảnh; mã ngành 7 số thiếu cho HUST/TLU/NEU-EP; HaUI 2026 thiếu 15 CT tiếng Anh; nhiều dòng chỉ 1 nguồn | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+  r13: S12 | Giả định của nhóm | Nhóm 5 | KPI_Sheet (Tham số) | Giả định chuyên môn | — | Khi cần | — | — | Sinh hoạt 54 tr/năm; học phí +10%/năm; 35 tín chỉ/năm; quy đổi TSA/HSA tuyến tính; mã Holland ngành | Cần kiểm chứng thêm | 2026-10-07 | Tự tạo
+  r14: 
+  r15: 
+  r16: 
+  r17: 
+  r18: 
+  r19: 
+
+########## SHEET: main_dataset ##########
+total_rows=3097
+  r0: application_id | student_id | cohort_year | registration_date | result_date | nv_order | program_id | university_code | major_code | major_name | khoi_nganh | industry_group | ref_cutoff_30 | n_methods_evaluated | n_methods_eligible | best_method | best_margin_30 | is_eligible | is_admitted | gender | priority_area | high_school_type | subject_track | interest_industry | holland_code | program_holland_code | holland_match_pct | n_test_types | family_budget_vnd_year | duration_years
+  r1: APP00001 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 1.0 | DCN_7480103 | DCN | 7480103 | Kỹ thuật phần mềm | V | CNTT | 25.32 | 1.0 | 0.0 | THPT | -0.61 | False | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | IRC | 100.0 | 2.0 | 65000000.0 | 4.0
+  r2: APP00002 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 2.0 | DCN_7510205 | DCN | 7510205 | Công nghệ kỹ thuật ô tô | V | Ô tô - Cơ khí | 25.14 | 1.0 | 0.0 | THPT | -0.33 | False | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | RIC | 100.0 | 2.0 | 65000000.0 | 4.0
+  r3: APP00003 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 3.0 | YHB_7720115 | YHB | 7720115 | Y học cổ truyền | VI | Răng hàm mặt - Y học cổ truyền | 24.94 | 1.0 | 0.0 | THPT | -0.84 | False | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | ISR | 75.0 | 2.0 | 65000000.0 | 6.0
+  r4: APP00004 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 4.0 | YHB_7720301 | YHB | 7720301 | Điều dưỡng (CT tiên tiến) | VI | Điều dưỡng - KTYH - YTCC - Dinh dưỡng | 24.83 | 1.0 | 0.0 | THPT | -0.07 | False | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | SIR | 66.7 | 2.0 | 65000000.0 | 4.0
+  r5: APP00005 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 5.0 | BKA_BF1 | BKA | 7420202 | Kỹ thuật sinh học | V | Kỹ thuật hóa học - Sinh học | 24.65 | 2.0 | 1.0 | TSA | 0.31 | True | True | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | IRS | 83.3 | 2.0 | 65000000.0 | 4.0
+  r6: APP00006 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 6.0 | DCN_7510301 | DCN | 7510301 | Công nghệ kỹ thuật điện, điện tử | V | Tự động hóa - Điện - Điện tử | 24.41 | 1.0 | 1.0 | THPT | 0.12 | True | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | RIC | 100.0 | 2.0 | 65000000.0 | 4.0
+  r7: APP00007 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 7.0 | YHB_7720401 | YHB | 7720401 | Dinh dưỡng | VI | Điều dưỡng - KTYH - YTCC - Dinh dưỡng | 23.77 | 1.0 | 1.0 | THPT | 0.74 | True | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | ISC | 58.3 | 2.0 | 65000000.0 | 4.0
+  r8: APP00008 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 8.0 | SPH_7480201 | SPH | 7480201 | Công nghệ thông tin | V | CNTT | 22.63 | 2.0 | 2.0 | THPT | 0.37 | True | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | IRC | 100.0 | 2.0 | 65000000.0 | 4.0
+  r9: APP00009 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 9.0 | HVN_7480201 | HVN | 7480201 | Công nghệ thông tin | V | CNTT | 21.22 | 1.0 | 1.0 | THPT | 1.93 | True | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | IRC | 100.0 | 2.0 | 65000000.0 | 4.0
+  r10: APP00010 | HS2023002 | 2023.0 | 2023-07-13 | 2023-08-22 | 1.0 | SPH_7140202 | SPH | 7140202 | Giáo dục Tiểu học | I | Sư phạm | 27.19 | 1.0 | 1.0 | THPT | 0.63 | True | True | Nữ | KV3 | Công lập | D | Marketing | AES | SAE | 100.0 | 1.0 | 141000000.0 | 4.0
+  r11: APP00011 | HS2023002 | 2023.0 | 2023-07-13 | 2023-08-22 | 2.0 | KHA_7380107 | KHA | 7380107 | Luật kinh tế | III | Luật | 26.98 | 1.0 | 1.0 | THPT | 0.4 | True | False | Nữ | KV3 | Công lập | D | Marketing | AES | ESI | 66.7 | 1.0 | 141000000.0 | 4.0
+  r12: APP00012 | HS2023002 | 2023.0 | 2023-07-13 | 2023-08-22 | 3.0 | TLA_7340301 | TLA | 7340301 | Kế toán | III | Kế toán | 25.8 | 2.0 | 1.0 | THPT | 2.34 | True | False | Nữ | KV3 | Công lập | D | Marketing | AES | CIE | 25.0 | 1.0 | 141000000.0 | 4.0
+  r13: APP00013 | HS2023002 | 2023.0 | 2023-07-13 | 2023-08-22 | 4.0 | SPH_7140217 | SPH | 7140217 | Sư phạm Ngữ văn | I | Sư phạm | 25.75 | 2.0 | 1.0 | THPT | 0.85 | True | False | Nữ | KV3 | Công lập | D | Marketing | AES | SAE | 100.0 | 1.0 | 141000000.0 | 4.0
+  r14: APP00014 | HS2023002 | 2023.0 | 2023-07-13 | 2023-08-22 | 5.0 | DCN_7220201 | DCN | 7220201 | Ngôn ngữ Anh | VII | Ngoại ngữ - Biên phiên dịch | 25.49 | 1.0 | 1.0 | THPT | 2.95 | True | False | Nữ | KV3 | Công lập | D | Marketing | AES | AES | 100.0 | 1.0 | 141000000.0 | 4.0
+  r15: APP00015 | HS2023003 | 2023.0 | 2023-07-18 | 2023-08-22 | 1.0 | KHA_7310106 | KHA | 7310106 | Kinh tế quốc tế | III | Kinh tế quốc tế - Logistics | 27.77 | 1.0 | 0.0 | THPT | -1.35 | False | False | Nam | KV3 | Công lập | D | Kinh tế quốc tế - Logistics | ICE | ECI | 100.0 | 2.0 | 111000000.0 | 4.0
+  r16: APP00016 | HS2023003 | 2023.0 | 2023-07-18 | 2023-08-22 | 2.0 | KHA_7340201 | KHA | 7340201 | Tài chính - Ngân hàng | III | Tài chính - Ngân hàng | 27.36 | 1.0 | 0.0 | THPT | -1.1 | False | False | Nam | KV3 | Công lập | D | Kinh tế quốc tế - Logistics | ICE | CEI | 100.0 | 2.0 | 111000000.0 | 4.0
+  r17: APP00017 | HS2023003 | 2023.0 | 2023-07-18 | 2023-08-22 | 3.0 | KHA_7340115 | KHA | 7340115 | Marketing | III | Marketing | 26.98 | 1.0 | 0.0 | THPT | -1.55 | False | False | Nam | KV3 | Công lập | D | Kinh tế quốc tế - Logistics | ICE | EAS | 33.3 | 2.0 | 111000000.0 | 4.0
+  r18: APP00018 | HS2023003 | 2023.0 | 2023-07-18 | 2023-08-22 | 4.0 | KHA_7340301 | KHA | 7340301 | Kế toán | III | Kế toán | 26.13 | 1.0 | 0.0 | THPT | -1.05 | False | False | Nam | KV3 | Công lập | D | Kinh tế quốc tế - Logistics | ICE | CIE | 100.0 | 2.0 | 111000000.0 | 4.0
+  r19: APP00019 | HS2023003 | 2023.0 | 2023-07-18 | 2023-08-22 | 5.0 | SPH_7480201 | SPH | 7480201 | Công nghệ thông tin | V | CNTT | 22.42 | 2.0 | 2.0 | THPT | 1.69 | True | True | Nam | KV3 | Công lập | D | Kinh tế quốc tế - Logistics | ICE | IRC | 75.0 | 2.0 | 111000000.0 | 4.0
+
+########## SHEET: Case_Summary ##########
+total_rows=1000
+  r0: special_case | exam_status / loại thí sinh | so_hs | so_trung_tuyen | ty_le_trung_tuyen | so_nv | so_nv_du_diem_nhung_khong_TN | quy_tac_mo_phong
+  r1: NORMAL | Dự thi đầy đủ | 396 | 385 | 0.9722222222 | 2494 | 0 | HS đương niên dự thi đầy đủ
+  r2: TU_DO | Dự thi đầy đủ – Thí sinh tự do | 40 | 39 | 0.975 | 277 | 0 | Đã TN 1–2 năm trước; thi 3 môn; không XTTH; TN quá 1 năm → mất ưu tiên KV
+  r3: BO_THI_TOAN_BO | Bỏ thi toàn bộ | 12 | 0 | 0 | 34 | 8 | Không có điểm thi → không TN; chỉ còn học bạ/ĐGNL nhưng vẫn bị loại
+  r4: BO_THI_1_MON | Bỏ thi 1 bài thi | 12 | 0 | 0 | 69 | 34 | Vắng 1 bài → không TN
+  r5: DIEM_LIET | Có điểm liệt (≤ 1,0) | 8 | 0 | 0 | 42 | 32 | 1 môn ≤ 1,0 → không TN
+  r6: MIEN_THI_NN | Miễn thi Ngoại ngữ (chứng chỉ) | 24 | 22 | 0.9166666667 | 153 | 0 | Điểm NN trống; CCNN dùng IELTS quy đổi
+  r7: MIEN_THI_TOAN_BO | Miễn thi toàn bộ – tuyển thẳng | 8 | 8 | 1 | 27 | 0 | Được công nhận TN; NV1 tuyển thẳng (TUYEN_THANG)
+  r8: TỔNG |  | 500 | 454 | 0.908 | 3096 | 74 | 
+  r9: 
+  r10: 
+  r11: 
+  r12: 
+  r13: 
+  r14: 
+  r15: 
+  r16: 
+  r17: 
+  r18: 
+  r19: 
+
+########## SHEET: student_outcome ##########
+total_rows=1000
+  r0: student_id | cohort_year | special_case | exam_status | candidate_type | admitted_nv_order | admitted_program_id | admitted_by_method | n_nv | n_universities_applied | admission_status
+  r1: HS2023001 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 5.0 | BKA_BF1 | TSA | 9.0 | 5.0 | Trúng tuyển
+  r2: HS2023002 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 1.0 | SPH_7140202 | THPT | 5.0 | 4.0 | Trúng tuyển
+  r3: HS2023003 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 5.0 | SPH_7480201 | THPT | 6.0 | 3.0 | Trúng tuyển
+  r4: HS2023004 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 1.0 | YHB_7720101 | KET_HOP_CCNN | 10.0 | 5.0 | Trúng tuyển
+  r5: HS2023005 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 2.0 | SPH_7310401 | THPT | 3.0 | 3.0 | Trúng tuyển
+  r6: HS2023006 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 4.0 | HVN_7480201 | THPT | 6.0 | 5.0 | Trúng tuyển
+  r7: HS2023007 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 6.0 | YHB_7720301 | KET_HOP_CCNN | 9.0 | 5.0 | Trúng tuyển
+  r8: HS2023008 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 2.0 | HVN_7340101 | THPT | 5.0 | 4.0 | Trúng tuyển
+  r9: HS2023009 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 2.0 | TLA_7580201 | HOC_BA | 4.0 | 3.0 | Trúng tuyển
+  r10: HS2023010 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 5.0 | DCN_7340301 | THPT | 6.0 | 4.0 | Trúng tuyển
+  r11: HS2023011 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 1.0 | TLA_7580201 | HOC_BA | 9.0 | 2.0 | Trúng tuyển
+  r12: HS2023013 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 1.0 | KHA_7810201 | THPT | 10.0 | 6.0 | Trúng tuyển
+  r13: HS2023014 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 1.0 | TLA_7510605 | THPT | 4.0 | 3.0 | Trúng tuyển
+  r14: HS2023015 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 3.0 | TLA_7340301 | THPT | 6.0 | 4.0 | Trúng tuyển
+  r15: HS2023016 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 1.0 | KHA_7340301 | THPT | 5.0 | 3.0 | Trúng tuyển
+  r16: HS2023017 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 2.0 | DCN_7340301 | THPT | 3.0 | 3.0 | Trúng tuyển
+  r17: HS2023018 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 3.0 | SPH_7140217 | THPT | 8.0 | 5.0 | Trúng tuyển
+  r18: HS2023019 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 2.0 | TLA_7580213 | HOC_BA | 6.0 | 2.0 | Trúng tuyển
+  r19: HS2023020 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 3.0 | TLA_7520320 | HOC_BA | 3.0 | 3.0 | Trúng tuyển
+
+########## SHEET: KPI_Sheet ##########
+total_rows=1000
+  r0: kpi_id | kpi_name | decision_question | formula_definition | unit | granularity | source_tables | decision_meaning | sample_value | sample_scope
+  r1: K01 | Tỷ lệ đỗ nhóm nguyện vọng mục tiêu (NV1–NV3) | Q1 Xếp nguyện vọng thế nào để vừa có cơ hội vào ngành mơ ước, vừa chắc chắn đỗ? | Số HS trúng tuyển NV1–NV3 / Tổng số HS xét tuyển × 100 | % | HS × khóa | v_student_outcome, fact_application, fact_application_method | Thấp → danh sách quá mạo hiểm, bổ sung ngành/trường an toàn dự phòng | 0.648 | 500 HS mô phỏng (gồm case đặc biệt), 2023–2026
+  r2: K02 | Lợi thế từ phương thức xét tuyển phụ | Q1 | Số NV đỗ có phương thức tốt nhất không phải điểm thi THPT / Tổng số NV đủ điểm × 100 | % | NV × phương thức | fact_application_method, v_main_dataset | Cao → tận dụng ĐGNL/ĐGTD hoặc học bạ để tăng cơ hội đỗ | 0.3768361582 | NV đủ điểm
+  r3: K03 | Biên độ sai số dự báo điểm chuẩn | Q2 Dự báo điểm chuẩn đáng tin đến đâu? | Trung bình |Điểm chuẩn thực tế − Điểm chuẩn dự báo| (MAE, phương pháp MA2) | điểm | Ngành × năm | fact_cutoff_forecast, fact_cutoff_score | Nhỏ → yên tâm chốt thứ tự NV; lớn → giữ khoảng an toàn rộng hơn | 1.345759259 | Toàn bộ ngành thang 30, năm 2025–2026 (dữ liệu thật)
+  r4: K04 | Tốc độ tăng trưởng nhu cầu ngành | Q3 Học xong ngành này có dễ xin việc? | (Chỉ số tuyển dụng năm hiện tại − năm trước) / năm trước × 100 | % | Nhóm nghề × năm | fact_labor_demand | Dương + K05 ≥ 90% → danh mục khuyến nghị; âm → cảnh báo bão hòa | -0.2918032787 | Ví dụ CNTT 2025→2026 (minh họa – hai chỉ số TopCV khác cách đo)
+  r5: K05 | Tỷ lệ sinh viên có việc làm sau 1 năm | Q3 | Số SV có việc làm trong 12 tháng / Tổng số SV hoàn thành khảo sát × 100 | % | Ngành/lĩnh vực × khóa TN | fact_employment | ≥ 90% → đầu ra ổn định | 0.9448378378 | TB các dòng có số liệu (dữ liệu thật)
+  r6: K06 | Tổng chi phí ước tính toàn khóa | Q4 Gia đình có đủ sức lo chi phí học không? | Σ (Học phí năm đầu × 1,1^k) + (54 triệu − hỗ trợ sinh hoạt) × số năm học | VND | HS × ngành | fact_tuition, dim_program, v_main_dataset | Số tiền gia đình cần chuẩn bị cho toàn khóa | 317910594.7 | TB các NV trúng tuyển
+  r7: K07 | Chỉ số áp lực tài chính gia đình | Q4 | Tổng chi phí toàn khóa / Tổng ngân sách gia đình cho việc học × 100; ghi nhận = tỷ lệ HS vượt 100% | % | HS × ngành | v_main_dataset, dim_student | > 100% → vượt khả năng: học bổng, tín dụng hoặc trường học phí thấp hơn | 0.3325991189 | Tỷ lệ HS trúng tuyển vượt ngân sách
+  r8:  |  |  |  |  |  |  |  |  | 
+  r9: THAM SỐ / GIẢ ĐỊNH |  |  |  |  |  |  |  |  | 
+  r10: Chi phí sinh hoạt Hà Nội (VND/năm) | 54000000.0 | Giả định: 4,5 triệu × 12 tháng |  |  |  |  |  |  | 
+  r11: Tăng học phí/năm | 0.1 | Giả định theo mức trần tăng |  |  |  |  |  |  | 
+  r12: Số tín chỉ/năm (quy đổi học phí) | 35.0 | Giả định |  |  |  |  |  |  | 
+  r13: Hỗ trợ sinh hoạt SV sư phạm (VND/năm) | 36300000.0 | NĐ 116/2020: 3,63 triệu × 10 tháng |  |  |  |  |  |  | 
+  r14: Quy đổi TSA → thang 30 | 9,6 + 0,248 × TSA | Ước lượng từ cặp điểm tương đương HUST 2026 |  |  |  |  |  |  | 
+  r15: Quy đổi HSA → thang 30 | 14,6 + 0,117 × HSA | Ước lượng từ cặp điểm tương đương NEU 2026 |  |  |  |  |  |  | 
+  r16: Ngưỡng giảm điểm ưu tiên | 22.5 | Quy chế tuyển sinh từ 2023 |  |  |  |  |  |  | 
+  r17: Ngày thi THPT 2026 / cửa sổ NV 2026 | 11/06 ; 15–28/07 | Giả định – cần xác minh |  |  |  |  |  |  | 
+  r18: 
+  r19: 
+
+########## SHEET: application_method ##########
+total_rows=4588
+  r0: app_method_id | application_id | cutoff_id | admission_method | combination_used | raw_score | priority_bonus | final_score | score_scale | cutoff_score | score_margin | score_margin_30 | is_eligible | converted_from
+  r1: APP00001-M1 | APP00001 | CUT0071 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 24.54 | -0.61 | -0.61 | False | 
+  r2: APP00002-M1 | APP00002 | CUT0086 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 24.26 | -0.33 | -0.33 | False | 
+  r3: APP00003-M1 | APP00003 | CUT0301 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 24.77 | -0.84 | -0.84 | False | 
+  r4: APP00004-M1 | APP00004 | CUT0306 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 24.0 | -0.07 | -0.07 | False | 
+  r5: APP00005-M1 | APP00005 | CUT0001 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 24.6 | -0.67 | -0.67 | False | 
+  r6: APP00005-M2 | APP00005 | CUT0002 | TSA | TSA | 52.88 | 0.0 | 52.88 | 100.0 | 51.84 | 1.04 | 0.31 | True | 
+  r7: APP00006-M1 | APP00006 | CUT0093 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 23.81 | 0.12 | 0.12 | True | 
+  r8: APP00007-M1 | APP00007 | CUT0312 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 23.19 | 0.74 | 0.74 | True | 
+  r9: APP00008-M1 | APP00008 | CUT0232 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 23.7 | 0.23 | 0.23 | True | 
+  r10: APP00008-M2 | APP00008 | CUT0233 | THPT | A01 | 23.5 | 0.43 | 23.93 | 30.0 | 23.56 | 0.37 | 0.37 | True | 
+  r11: APP00009-M1 | APP00009 | CUT0121 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 22.0 | 1.93 | 1.93 | True | 
+  r12: APP00010-M1 | APP00010 | CUT0200 | THPT | D01 | 27.25 | 0.0 | 27.25 | 30.0 | 26.62 | 0.63 | 0.63 | True | 
+  r13: APP00011-M1 | APP00011 | CUT0188 | THPT | D01 | 27.25 | 0.0 | 27.25 | 30.0 | 26.85 | 0.4 | 0.4 | True | 
+  r14: APP00012-M1 | APP00012 | CUT0237 | HOC_BA | D01 | 26.9 | 0.0 | 26.9 | 30.0 | 28.75 | -1.85 | -1.85 | False | 
+  r15: APP00012-M2 | APP00012 | CUT0238 | THPT | D01 | 27.25 | 0.0 | 27.25 | 30.0 | 24.91 | 2.34 | 2.34 | True | 
+  r16: APP00013-M1 | APP00013 | CUT0210 | THPT | C00 | 25.75 | 0.0 | 25.75 | 30.0 | 27.83 | -2.08 | -2.08 | False | 
+  r17: APP00013-M2 | APP00013 | CUT0211 | THPT | D01 | 27.25 | 0.0 | 27.25 | 30.0 | 26.4 | 0.85 | 0.85 | True | 
+  r18: APP00014-M1 | APP00014 | CUT0058 | THPT | D01 | 27.25 | 0.0 | 27.25 | 30.0 | 24.3 | 2.95 | 2.95 | True | 
+  r19: APP00015-M1 | APP00015 | CUT0156 | THPT | D01 | 26.0 | 0.0 | 26.0 | 30.0 | 27.35 | -1.35 | -1.35 | False | 
+
+########## SHEET: application ##########
+total_rows=3097
+  r0: application_id | student_id | registration_date | result_date | nv_order | program_id | ref_cutoff_30 | is_eligible | is_admitted | holland_match_pct | first_year_tuition_vnd | tuition_is_imputed | living_support_vnd_year | est_total_cost_vnd | affordability_index_pct | scholarship_eligibility_score | score_eligible | combo_is_assumed | not_admitted_reason
+  r1: APP00001 | HS2023001 | 2023-07-15 | 2023-08-22 | 1.0 | DCN_7480103 | 25.32 | False | False | 100.0 | 20000000.0 | False | 0.0 | 308820000.0 | 118.8 |  | False | False | Không đủ điểm
+  r2: APP00002 | HS2023001 | 2023-07-15 | 2023-08-22 | 2.0 | DCN_7510205 | 25.14 | False | False | 100.0 | 20000000.0 | False | 0.0 | 308820000.0 | 118.8 |  | False | False | Không đủ điểm
+  r3: APP00003 | HS2023001 | 2023-07-15 | 2023-08-22 | 3.0 | YHB_7720115 | 24.94 | False | False | 75.0 | 55200000.0 | False | 0.0 | 749902000.0 | 192.3 |  | False | False | Không đủ điểm
+  r4: APP00004 | HS2023001 | 2023-07-15 | 2023-08-22 | 4.0 | YHB_7720301 | 24.83 | False | False | 66.7 | 41800000.0 | False | 0.0 | 409994000.0 | 157.7 |  | False | False | Không đủ điểm
+  r5: APP00005 | HS2023001 | 2023-07-15 | 2023-08-22 | 5.0 | BKA_BF1 | 24.65 | True | True | 83.3 | 26000000.0 | False | 0.0 | 336666000.0 | 129.5 | 27.9 | True | False | 
+  r6: APP00006 | HS2023001 | 2023-07-15 | 2023-08-22 | 6.0 | DCN_7510301 | 24.41 | True | False | 100.0 | 20000000.0 | False | 0.0 | 308820000.0 | 118.8 |  | True | False | Đã trúng tuyển NV ưu tiên cao hơn
+  r7: APP00007 | HS2023001 | 2023-07-15 | 2023-08-22 | 7.0 | YHB_7720401 | 23.77 | True | False | 58.3 | 20900000.0 | False | 0.0 | 312997000.0 | 120.4 |  | True | False | Đã trúng tuyển NV ưu tiên cao hơn
+  r8: APP00008 | HS2023001 | 2023-07-15 | 2023-08-22 | 8.0 | SPH_7480201 | 22.63 | True | False | 100.0 | 11364000.0 | True | 0.0 | 268739000.0 | 103.4 |  | True | False | Đã trúng tuyển NV ưu tiên cao hơn
+  r9: APP00009 | HS2023001 | 2023-07-15 | 2023-08-22 | 9.0 | HVN_7480201 | 21.22 | True | False | 100.0 | 18322000.0 | False | 0.0 | 301035000.0 | 115.8 |  | True | False | Đã trúng tuyển NV ưu tiên cao hơn
+  r10: APP00010 | HS2023002 | 2023-07-13 | 2023-08-22 | 1.0 | SPH_7140202 | 27.19 | True | True | 100.0 | 0.0 | False | 36300000.0 | 70800000.0 | 12.6 | 41.6 | True | False | 
+  r11: APP00011 | HS2023002 | 2023-07-13 | 2023-08-22 | 2.0 | KHA_7380107 | 26.98 | True | False | 66.7 | 19000000.0 | False | 0.0 | 304179000.0 | 53.9 |  | True | False | Đã trúng tuyển NV ưu tiên cao hơn
+  r12: APP00012 | HS2023002 | 2023-07-13 | 2023-08-22 | 3.0 | TLA_7340301 | 25.8 | True | False | 25.0 | 15250000.0 | False | 0.0 | 286775000.0 | 50.8 |  | True | False | Đã trúng tuyển NV ưu tiên cao hơn
+  r13: APP00013 | HS2023002 | 2023-07-13 | 2023-08-22 | 4.0 | SPH_7140217 | 25.75 | True | False | 100.0 | 0.0 | False | 36300000.0 | 70800000.0 | 12.6 |  | True | False | Đã trúng tuyển NV ưu tiên cao hơn
+  r14: APP00014 | HS2023002 | 2023-07-13 | 2023-08-22 | 5.0 | DCN_7220201 | 25.49 | True | False | 100.0 | 20000000.0 | False | 0.0 | 308820000.0 | 54.8 |  | True | False | Đã trúng tuyển NV ưu tiên cao hơn
+  r15: APP00015 | HS2023003 | 2023-07-18 | 2023-08-22 | 1.0 | KHA_7310106 | 27.77 | False | False | 100.0 | 19000000.0 | False | 0.0 | 304179000.0 | 68.5 |  | False | False | Không đủ điểm
+  r16: APP00016 | HS2023003 | 2023-07-18 | 2023-08-22 | 2.0 | KHA_7340201 | 27.36 | False | False | 100.0 | 19000000.0 | False | 0.0 | 304179000.0 | 68.5 |  | False | False | Không đủ điểm
+  r17: APP00017 | HS2023003 | 2023-07-18 | 2023-08-22 | 3.0 | KHA_7340115 | 26.98 | False | False | 33.3 | 19000000.0 | False | 0.0 | 304179000.0 | 68.5 |  | False | False | Không đủ điểm
+  r18: APP00018 | HS2023003 | 2023-07-18 | 2023-08-22 | 4.0 | KHA_7340301 | 26.13 | False | False | 100.0 | 19000000.0 | False | 0.0 | 304179000.0 | 68.5 |  | False | False | Không đủ điểm
+  r19: APP00019 | HS2023003 | 2023-07-18 | 2023-08-22 | 5.0 | SPH_7480201 | 22.42 | True | True | 75.0 | 11364000.0 | True | 0.0 | 268739000.0 | 60.5 | 58.7 | True | False | 
+
+########## SHEET: student ##########
+total_rows=1000
+  r0: student_id | cohort_year | profile_created_date | gender | priority_area | priority_bonus_base | high_school_type | subject_track | interest_industry | holland_code | gpa_grade10 | gpa_grade11 | gpa_grade12 | ielts_score | tsa_score | hsa_score | spt_score | family_budget_vnd_year | n_test_types | candidate_type | thpt_graduation_year | is_thpt_graduated | exam_status | special_case | case_note | data_batch
+  r1: HS2023001 | 2023.0 | 2023-02-22 | Nữ | KV2-NT | 0.5 | Công lập | A | Ô tô - Cơ khí | RIC | 8.1 | 8.3 | 8.7 |  | 52.88 |  |  | 65000000.0 | 2.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r2: HS2023002 | 2023.0 | 2023-05-07 | Nữ | KV3 | 0.0 | Công lập | D | Marketing | AES | 9.2 | 8.9 | 8.5 |  |  |  |  | 141000000.0 | 1.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r3: HS2023003 | 2023.0 | 2023-05-06 | Nam | KV3 | 0.0 | Công lập | D | Kinh tế quốc tế - Logistics | ICE | 9.2 | 8.5 | 8.8 | 7.0 |  |  |  | 111000000.0 | 2.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r4: HS2023004 | 2023.0 | 2023-04-21 | Nam | KV2 | 0.25 | Công lập | B | Răng hàm mặt - Y học cổ truyền | SRI | 8.5 | 8.7 | 9.2 | 7.0 | 78.97 | 104.0 |  | 55000000.0 | 4.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r5: HS2023005 | 2023.0 | 2023-05-02 | Nữ | KV3 | 0.0 | Công lập | D | Luật | ISA | 8.2 | 9.0 | 9.0 |  |  | 105.0 |  | 115000000.0 | 2.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r6: HS2023006 | 2023.0 | 2023-04-07 | Nam | KV2-NT | 0.5 | Công lập | D | Khoa học dữ liệu - HTTTQL | ICR | 7.7 | 7.2 | 7.3 |  |  |  |  | 214000000.0 | 1.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r7: HS2023007 | 2023.0 | 2023-05-19 | Nam | KV3 | 0.0 | Công lập | D | Luật | ESI | 8.2 | 7.7 | 8.1 | 6.0 |  | 87.0 |  | 120000000.0 | 3.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r8: HS2023008 | 2023.0 | 2023-04-10 | Nam | KV2-NT | 0.5 | Tư thục | D | Du lịch - Khách sạn | ESC | 8.6 | 8.7 | 8.6 | 6.0 |  | 114.0 |  | 234000000.0 | 3.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r9: HS2023009 | 2023.0 | 2023-04-26 | Nữ | KV2 | 0.25 | Công lập | A | Xây dựng - Tài nguyên nước - Môi trường | RIC | 7.1 | 7.5 | 7.4 |  | 32.46 |  | 8.9 | 123000000.0 | 3.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r10: HS2023010 | 2023.0 | 2023-03-08 | Nam | KV3 | 0.0 | Công lập | D | Luật | SEI | 8.8 | 8.1 | 8.0 |  |  |  |  | 92000000.0 | 1.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r11: HS2023011 | 2023.0 | 2023-04-01 | Nam | KV2 | 0.25 | Công lập | B | Răng hàm mặt - Y học cổ truyền | IER | 6.9 | 7.6 | 7.0 |  | 33.56 |  |  | 111000000.0 | 2.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r12: HS2023012 | 2023.0 | 2023-03-26 | Nam | KV2 | 0.25 | Công lập | B | Y khoa | RSI | 7.2 | 6.4 | 6.3 |  |  | 44.0 |  | 102000000.0 | 2.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r13: HS2023013 | 2023.0 | 2023-05-23 | Nữ | KV3 | 0.0 | Công lập | D | Marketing | EAS | 9.0 | 9.1 | 8.7 | 7.5 | 82.97 | 97.0 |  | 73000000.0 | 4.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r14: HS2023014 | 2023.0 | 2023-04-14 | Nam | KV2 | 0.25 | Công lập | A | Tự động hóa - Điện - Điện tử | RCI | 7.8 | 8.2 | 7.7 |  |  |  |  | 94000000.0 | 1.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r15: HS2023015 | 2023.0 | 2023-02-14 | Nam | KV2-NT | 0.5 | Công lập | A | Tự động hóa - Điện - Điện tử | RAC | 7.7 | 8.0 | 8.1 | 6.0 |  |  |  | 84000000.0 | 2.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r16: HS2023016 | 2023.0 | 2023-03-10 | Nam | KV2 | 0.25 | Tư thục | C | Tâm lý học | AIS | 8.8 | 9.3 | 9.1 |  |  |  |  | 176000000.0 | 1.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r17: HS2023017 | 2023.0 | 2023-02-26 | Nam | KV2 | 0.25 | Chuyên | D | Marketing | EAS | 8.4 | 8.1 | 7.9 |  |  | 99.0 |  | 109000000.0 | 2.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r18: HS2023018 | 2023.0 | 2023-02-07 | Nữ | KV2 | 0.25 | Tư thục | C | Tâm lý học | SIA | 8.4 | 8.5 | 9.1 |  |  |  |  | 196000000.0 | 1.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  r19: HS2023019 | 2023.0 | 2023-02-21 | Nữ | KV2 | 0.25 | Công lập | A | Tự động hóa - Điện - Điện tử | IRE | 7.4 | 7.1 | 7.0 |  |  |  |  | 79000000.0 | 1.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+
+########## SHEET: score ##########
+total_rows=1000
+  r0: score_id | student_id | exam_year | exam_date | score_math | score_physics | score_chemistry | score_biology | score_literature | score_history | score_geography | score_english | hb_math | hb_physics | hb_chemistry | hb_biology | hb_literature | hb_history | hb_geography | hb_english | registered_subjects | absent_subjects | exempt_subjects | failing_subjects
+  r1: SC2023001 | HS2023001 | 2023.0 | 2023-06-28 | 8.25 | 7.75 | 7.5 | 7.5 | 7.25 |  |  | 7.5 | 8.8 | 8.7 | 8.4 | 8.2 | 8.2 | 7.9 | 8.0 | 8.5 | math;physics;chemistry;biology;literature;english |  |  | 
+  r2: SC2023002 | HS2023002 | 2023.0 | 2023-06-28 | 9.25 |  |  |  | 8.5 | 8.25 | 9.0 | 9.5 | 9.0 | 8.5 | 8.5 | 9.1 | 9.1 | 9.1 | 9.6 | 8.8 | math;literature;history;geography;english |  |  | 
+  r3: SC2023003 | HS2023003 | 2023.0 | 2023-06-28 | 8.25 | 7.75 | 8.0 | 9.25 | 8.5 |  |  | 9.25 | 8.5 | 8.9 | 8.2 | 8.4 | 9.8 | 8.7 | 9.3 | 9.3 | math;physics;chemistry;biology;literature;english |  |  | 
+  r4: SC2023004 | HS2023004 | 2023.0 | 2023-06-28 | 8.0 | 8.75 | 10.0 | 8.75 | 8.5 |  |  | 8.0 | 8.6 | 8.1 | 9.0 | 9.4 | 8.6 | 9.1 | 8.8 | 8.8 | math;physics;chemistry;biology;literature;english |  |  | 
+  r5: SC2023005 | HS2023005 | 2023.0 | 2023-06-28 | 9.5 |  |  |  | 8.25 | 7.75 | 7.0 | 8.0 | 9.0 | 8.1 | 8.4 | 9.2 | 9.1 | 9.3 | 8.3 | 8.1 | math;literature;history;geography;english |  |  | 
+  r6: SC2023006 | HS2023006 | 2023.0 | 2023-06-28 | 6.75 | 6.5 | 7.75 | 6.5 | 5.75 |  |  | 8.25 | 7.3 | 7.8 | 7.8 | 7.1 | 8.2 | 7.7 | 7.8 | 7.6 | math;physics;chemistry;biology;literature;english |  |  | 
+  r7: SC2023007 | HS2023007 | 2023.0 | 2023-06-28 | 7.25 | 7.75 | 7.5 | 7.0 | 7.25 |  |  | 8.25 | 8.3 | 8.1 | 7.5 | 7.4 | 8.4 | 8.1 | 8.2 | 8.4 | math;physics;chemistry;biology;literature;english |  |  | 
+  r8: SC2023008 | HS2023008 | 2023.0 | 2023-06-28 | 7.5 |  |  |  | 7.75 | 7.25 | 7.75 | 8.25 | 8.5 | 8.7 | 8.5 | 8.2 | 8.5 | 8.2 | 8.5 | 8.8 | math;literature;history;geography;english |  |  | 
+  r9: SC2023009 | HS2023009 | 2023.0 | 2023-06-28 | 6.0 | 6.75 | 6.75 | 6.75 | 6.0 |  |  | 6.25 | 7.9 | 8.0 | 7.4 | 7.9 | 8.3 | 7.8 | 7.1 | 7.7 | math;physics;chemistry;biology;literature;english |  |  | 
+  r10: SC2023010 | HS2023010 | 2023.0 | 2023-06-28 | 8.25 | 7.0 | 7.25 | 6.0 | 8.75 |  |  | 8.25 | 8.2 | 8.0 | 8.2 | 7.7 | 8.3 | 7.8 | 8.3 | 8.1 | math;physics;chemistry;biology;literature;english |  |  | 
+  r11: SC2023011 | HS2023011 | 2023.0 | 2023-06-28 | 5.75 | 6.25 | 5.5 | 6.25 | 5.75 |  |  | 5.25 | 7.2 | 7.4 | 7.9 | 7.4 | 7.0 | 7.2 | 7.4 | 7.2 | math;physics;chemistry;biology;literature;english |  |  | 
+  r12: SC2023012 | HS2023012 | 2023.0 | 2023-06-28 | 5.25 | 5.0 | 5.0 | 5.0 | 5.0 |  |  | 4.75 | 6.2 | 7.3 | 6.7 | 7.6 | 7.4 | 7.0 | 7.1 | 7.5 | math;physics;chemistry;biology;literature;english |  |  | 
+  r13: SC2023013 | HS2023013 | 2023.0 | 2023-06-28 | 9.5 | 8.75 | 8.75 | 9.0 | 9.25 |  |  | 9.75 | 9.5 | 8.5 | 8.1 | 8.7 | 9.1 | 9.0 | 8.7 | 9.1 | math;physics;chemistry;biology;literature;english |  |  | 
+  r14: SC2023014 | HS2023014 | 2023.0 | 2023-06-28 | 8.0 | 8.25 | 8.75 | 6.75 | 6.75 |  |  | 7.25 | 8.4 | 9.2 | 8.2 | 8.6 | 7.9 | 8.2 | 8.4 | 8.4 | math;physics;chemistry;biology;literature;english |  |  | 
+  r15: SC2023015 | HS2023015 | 2023.0 | 2023-06-28 | 8.25 | 7.0 | 7.5 | 6.5 | 8.75 |  |  | 8.0 | 8.8 | 8.5 | 7.9 | 8.3 | 8.0 | 7.9 | 8.3 | 8.4 | math;physics;chemistry;biology;literature;english |  |  | 
+  r16: SC2023016 | HS2023016 | 2023.0 | 2023-06-28 | 8.25 |  |  |  | 10.0 | 10.0 | 10.0 | 9.75 | 9.4 | 9.4 | 8.7 | 9.2 | 9.2 | 9.1 | 9.7 | 8.8 | math;literature;history;geography;english |  |  | 
+  r17: SC2023017 | HS2023017 | 2023.0 | 2023-06-28 | 8.25 |  |  |  | 8.75 | 9.0 | 8.25 | 7.5 | 8.1 | 8.0 | 8.5 | 8.7 | 7.8 | 8.6 | 8.7 | 8.8 | math;literature;history;geography;english |  |  | 
+  r18: SC2023018 | HS2023018 | 2023.0 | 2023-06-28 | 9.0 |  |  |  | 8.5 | 9.25 | 10.0 | 9.0 | 9.2 | 9.0 | 8.1 | 9.0 | 8.8 | 9.3 | 9.0 | 9.0 | math;literature;history;geography;english |  |  | 
+  r19: SC2023019 | HS2023019 | 2023.0 | 2023-06-28 | 6.0 | 5.25 | 5.5 | 5.0 | 5.75 |  |  | 5.25 | 7.2 | 7.6 | 8.5 | 7.4 | 6.5 | 7.2 | 8.1 | 7.4 | math;physics;chemistry;biology;literature;english |  |  | 
+
+########## SHEET: cutoff_score ##########
+total_rows=2940
+  r0: cutoff_id | program_id | university_code | admission_year | announce_date | announce_date_is_approx | admission_method | method_group | subject_combination | cutoff_score | score_scale | scale_confirmed | cutoff_score_30 | is_missing | n_sources_agree | confidence | source_type | source_url | note | published_code | data_version
+  r1: CUT0001 | BKA_BF1 | BKA | 2023.0 | 2023-08-22 | False | THPT | Điểm thi THPT | ALL | 24.6 | 30.0 | True | 24.6 | False | 2.0 | Trung bình | Báo chí | https://tuoitre.vn/diem-chuan-dai-hoc-bach-khoa-ha-noi-cao-nhat-29-42-diem-20230822111545973.htm | v3 khớp | BF1 | v2
+  r2: CUT0002 | BKA_BF1 | BKA | 2023.0 | 2023-08-22 | False | TSA | Đánh giá tư duy (TSA) | TSA | 51.84 | 100.0 | True |  | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | BF1 | v2
+  r3: CUT0003 | BKA_BF1 | BKA | 2024.0 | 2024-08-17 | True | THPT | Điểm thi THPT | ALL | 24.0 | 30.0 | True | 24.0 | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | BF1 | v2
+  r4: CUT0004 | BKA_BF1 | BKA | 2024.0 | 2024-08-17 | True | TSA | Đánh giá tư duy (TSA) | TSA | 50.29 | 100.0 | True |  | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | Nghi vấn: có nguồn ghi 50.29 là của TROY-IT; v3 khớp | BF1 | v2
+  r5: CUT0005 | BKA_BF1 | BKA | 2025.0 | 2025-08-22 | True | QUY_DOI_CHUNG | Quy đổi chung (mọi phương thức) | ALL | 23.02 | 30.0 | True | 23.02 | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | BF1 | v2
+  r6: CUT0006 | BKA_BF1 | BKA | 2026.0 | 2026-08-10 | True | QUY_DOI_CHUNG | Quy đổi chung (mọi phương thức) | ALL | 24.56 | 30.0 | True | 24.56 | False | 1.0 | Thấp | Trang tổng hợp | https://diemthi.tuyensinh247.com/diem-chuan/dai-hoc-bach-khoa-ha-noi-BKA.html | v3 khớp | BF1 | v2
+  r7: CUT0007 | BKA_BF1 | BKA | 2026.0 | 2026-08-10 | True | TSA | Đánh giá tư duy (TSA) | TSA | 55.56 | 100.0 | True |  | False | 1.0 | Thấp | Trang tổng hợp | https://diemthi.tuyensinh247.com/diem-chuan/dai-hoc-bach-khoa-ha-noi-BKA.html | Tương đương; v3 khớp | BF1 | v2
+  r8: CUT0008 | BKA_CH1 | BKA | 2023.0 | 2023-08-22 | False | THPT | Điểm thi THPT | ALL | 23.7 | 30.0 | True | 23.7 | False | 2.0 | Trung bình | Báo chí | https://tuoitre.vn/diem-chuan-dai-hoc-bach-khoa-ha-noi-cao-nhat-29-42-diem-20230822111545973.htm | v3 khớp | CH1 | v2
+  r9: CUT0009 | BKA_CH1 | BKA | 2023.0 | 2023-08-22 | False | TSA | Đánh giá tư duy (TSA) | TSA | 50.6 | 100.0 | True |  | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | CH1 | v2
+  r10: CUT0010 | BKA_CH1 | BKA | 2024.0 | 2024-08-17 | True | THPT | Điểm thi THPT | ALL | 24.38 | 30.0 | True | 24.38 | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | CH1 | v2
+  r11: CUT0011 | BKA_CH1 | BKA | 2024.0 | 2024-08-17 | True | TSA | Đánh giá tư duy (TSA) | TSA | 51.85 | 100.0 | True |  | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | CH1 | v2
+  r12: CUT0012 | BKA_CH1 | BKA | 2025.0 | 2025-08-22 | True | QUY_DOI_CHUNG | Quy đổi chung (mọi phương thức) | ALL | 24.05 | 30.0 | True | 24.05 | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | CH1 | v2
+  r13: CUT0013 | BKA_CH1 | BKA | 2026.0 | 2026-08-10 | True | QUY_DOI_CHUNG | Quy đổi chung (mọi phương thức) | ALL | 25.5 | 30.0 | True | 25.5 | False | 2.0 | Trung bình | Trang tổng hợp | https://diemthi.tuyensinh247.com/diem-chuan/dai-hoc-bach-khoa-ha-noi-BKA.html | v3 khớp | CH1 | v2
+  r14: CUT0014 | BKA_CH1 | BKA | 2026.0 | 2026-08-10 | True | TSA | Đánh giá tư duy (TSA) | TSA | 58.81 | 100.0 | True |  | False | 2.0 | Trung bình | Trang tổng hợp | https://diemthi.tuyensinh247.com/diem-chuan/dai-hoc-bach-khoa-ha-noi-BKA.html | Tương đương; v3 khớp | CH1 | v2
+  r15: CUT0015 | BKA_EE2 | BKA | 2023.0 | 2023-08-22 | False | THPT | Điểm thi THPT | ALL | 27.57 | 30.0 | True | 27.57 | False | 2.0 | Trung bình | Báo chí | https://tuoitre.vn/diem-chuan-dai-hoc-bach-khoa-ha-noi-cao-nhat-29-42-diem-20230822111545973.htm | v3 khớp | EE2 | v2
+  r16: CUT0016 | BKA_EE2 | BKA | 2023.0 | 2023-08-22 | False | TSA | Đánh giá tư duy (TSA) | TSA | 72.23 | 100.0 | True |  | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | EE2 | v2
+  r17: CUT0017 | BKA_EE2 | BKA | 2024.0 | 2024-08-17 | True | THPT | Điểm thi THPT | ALL | 28.16 | 30.0 | True | 28.16 | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | EE2 | v2
+  r18: CUT0018 | BKA_EE2 | BKA | 2024.0 | 2024-08-17 | True | TSA | Đánh giá tư duy (TSA) | TSA | 73.77 | 100.0 | True |  | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | EE2 | v2
+  r19: CUT0019 | BKA_EE2 | BKA | 2025.0 | 2025-08-22 | True | QUY_DOI_CHUNG | Quy đổi chung (mọi phương thức) | ALL | 28.48 | 30.0 | True | 28.48 | False | 4.0 | Cao | Báo chí | https://baochinhphu.vn/diem-chuan-cua-dai-hoc-bach-khoa-ha-noi-nganh-khoa-hoc-du-lieu-va-tri-tue-nhan-tao-dan-dau-voi-2939-diem-102250822162052678.htm | v3 khớp | EE2 | v2
+
+########## SHEET: quota ##########
+total_rows=1367
+  r0: quota_id | program_id | university_code | admission_year | plan_date | admission_method | quota | source_type | source_url | note | published_code | data_version | quota_scope
+  r1: QUO001 | BKA_IT1 | BKA | 2023.0 | 2023-03-01 | TOTAL | 300.0 | Trang tổng hợp | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/ |  |  | v2 | Ngành/nhóm ngành
+  r2: QUO002 | BKA_EE2 | BKA | 2023.0 | 2023-03-01 | TOTAL | 500.0 | Trang tổng hợp | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/ |  |  | v2 | Ngành/nhóm ngành
+  r3: QUO003 | BKA_ME1 | BKA | 2023.0 | 2023-03-01 | TOTAL | 120.0 | Trang tổng hợp | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/ | Thấp so với 2024 – cần kiểm tra |  | v2 | Ngành/nhóm ngành
+  r4: QUO004 | BKA_CH1 | BKA | 2023.0 | 2023-03-01 | TOTAL | 520.0 | Trang tổng hợp | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/ |  |  | v2 | Ngành/nhóm ngành
+  r5: QUO005 | BKA_BF1 | BKA | 2023.0 | 2023-03-01 | TOTAL | 80.0 | Trang tổng hợp | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/ |  |  | v2 | Ngành/nhóm ngành
+  r6: QUO006 | BKA_EM3 | BKA | 2023.0 | 2023-03-01 | TOTAL | 100.0 | Trang tổng hợp | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/ |  |  | v2 | Ngành/nhóm ngành
+  r7: QUO007 | BKA_FL1 | BKA | 2023.0 | 2023-03-01 | TOTAL | 180.0 | Trang tổng hợp | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/ |  |  | v2 | Ngành/nhóm ngành
+  r8: QUO008 | BKA_IT1 | BKA | 2024.0 | 2024-03-01 | TOTAL | 300.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2024/2/21/ts-bkhn-17085046088101530004936.pdf |  |  | v2 | Ngành/nhóm ngành
+  r9: QUO009 | BKA_EE2 | BKA | 2024.0 | 2024-03-01 | TOTAL | 500.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2024/2/21/ts-bkhn-17085046088101530004936.pdf |  |  | v2 | Ngành/nhóm ngành
+  r10: QUO010 | BKA_ME1 | BKA | 2024.0 | 2024-03-01 | TOTAL | 300.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2024/2/21/ts-bkhn-17085046088101530004936.pdf |  |  | v2 | Ngành/nhóm ngành
+  r11: QUO011 | BKA_CH1 | BKA | 2024.0 | 2024-03-01 | TOTAL | 680.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2024/2/21/ts-bkhn-17085046088101530004936.pdf |  |  | v2 | Ngành/nhóm ngành
+  r12: QUO012 | BKA_BF1 | BKA | 2024.0 | 2024-03-01 | TOTAL | 160.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2024/2/21/ts-bkhn-17085046088101530004936.pdf |  |  | v2 | Ngành/nhóm ngành
+  r13: QUO013 | BKA_EM3 | BKA | 2024.0 | 2024-03-01 | TOTAL | 120.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2024/2/21/ts-bkhn-17085046088101530004936.pdf |  |  | v2 | Ngành/nhóm ngành
+  r14: QUO014 | BKA_FL1 | BKA | 2024.0 | 2024-03-01 | TOTAL | 210.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2024/2/21/ts-bkhn-17085046088101530004936.pdf |  |  | v2 | Ngành/nhóm ngành
+  r15: QUO015 | BKA_IT1 | BKA | 2025.0 | 2025-03-01 | TOTAL | 300.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2025/1/15/bach-khoa-ha-noi-tuyen-sinh-2025-17369093116271447247130.pdf |  |  | v2 | Ngành/nhóm ngành
+  r16: QUO016 | BKA_EE2 | BKA | 2025.0 | 2025-03-01 | TOTAL | 500.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2025/1/15/bach-khoa-ha-noi-tuyen-sinh-2025-17369093116271447247130.pdf |  |  | v2 | Ngành/nhóm ngành
+  r17: QUO017 | BKA_ME1 | BKA | 2025.0 | 2025-03-01 | TOTAL | 300.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2025/1/15/bach-khoa-ha-noi-tuyen-sinh-2025-17369093116271447247130.pdf |  |  | v2 | Ngành/nhóm ngành
+  r18: QUO018 | BKA_CH1 | BKA | 2025.0 | 2025-03-01 | TOTAL | 680.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2025/1/15/bach-khoa-ha-noi-tuyen-sinh-2025-17369093116271447247130.pdf |  |  | v2 | Ngành/nhóm ngành
+  r19: QUO019 | BKA_BF1 | BKA | 2025.0 | 2025-03-01 | TOTAL | 160.0 | Chính thức (bản lưu) | https://images2.thanhnien.vn/528068263637045248/2025/1/15/bach-khoa-ha-noi-tuyen-sinh-2025-17369093116271447247130.pdf |  |  | v2 | Ngành/nhóm ngành
+
+########## SHEET: tuition ##########
+total_rows=1000
+  r0: tuition_id | university_code | program_id | granularity | academic_year | academic_year_start_date | amount_min | amount_max | unit | tuition_min_vnd_year | tuition_max_vnd_year | tuition_mid_vnd_year | is_converted_from_credit | source_type | source_url | note
+  r1: TUI001 | BKA | ALL | Toàn trường (CT chuẩn) | 2023-2024 | 2023-09-01 | 23000000.0 | 29000000.0 | VND/năm | 23000000.0 | 29000000.0 | 26000000.0 | False | Báo chí | https://baoquocte.vn/du-kien-hoc-phi-dai-hoc-bach-khoa-ha-noi-nam-2023-229335.html | Dự kiến; CT chuẩn tùy ngành
+  r2: TUI002 | BKA | ALL | Toàn trường (CT chuẩn) | 2024-2025 | 2024-09-01 | 24000000.0 | 30000000.0 | VND/năm | 24000000.0 | 30000000.0 | 27000000.0 | False | Chính thức (bản lưu) | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Đề án 2024
+  r3: TUI003 | BKA | ALL | Toàn trường (CT chuẩn) | 2025-2026 | 2025-09-01 | 28000000.0 | 35000000.0 | VND/năm | 28000000.0 | 35000000.0 | 31500000.0 | False | Báo chí | https://tuoitre.vn/dai-hoc-bach-khoa-ha-noi-tang-hoc-phi-20250614165003205.htm | Áp dụng khóa 2025
+  r4: TUI004 | BKA | ALL | Toàn trường (CT chuẩn) | 2026-2027 | 2026-09-01 | 28000000.0 | 40000000.0 | VND/năm | 28000000.0 | 40000000.0 | 34000000.0 | False | Báo chí | https://vnexpress.net/hoc-phi-dai-hoc-bach-khoa-ha-noi-hust-nam-hoc-2026-2027-chi-tiet-nhat-5102344.html | Hơn nửa số CT chuẩn 28–40 triệu
+  r5: TUI005 | KHA | ALL | Toàn trường (CT chuẩn) | 2023-2024 | 2023-09-01 | 16000000.0 | 22000000.0 | VND/năm | 16000000.0 | 22000000.0 | 19000000.0 | False | Trang tổng hợp | https://tuyensinhso.vn/ban-tin/dh-kinh-te-quoc-dan-cong-bo-phuong-an-tuyen-sinh-2023-c62509.html | CT chuẩn
+  r6: TUI006 | KHA | ALL | Toàn trường (CT chuẩn) | 2024-2025 | 2024-09-01 | 16000000.0 | 22000000.0 | VND/năm | 16000000.0 | 22000000.0 | 19000000.0 | False | Trang tổng hợp | https://tuyensinhso.vn/ban-tin/hoc-phi-nam-2024-cua-cac-truong-dh-dao-tao-kinh-te-tu-16-trieu-dong-tro-len-c340018.html | Giống 2023 – cần kiểm tra
+  r7: TUI007 | KHA | ALL | Toàn trường (CT chuẩn) | 2025-2026 | 2025-09-01 | 18000000.0 | 25000000.0 | VND/năm | 18000000.0 | 25000000.0 | 21500000.0 | False | Báo chí | https://tapchicongthuong.vn/dai-hoc-kinh-te-quoc-dan-cong-bo-phuong-an-tuyen-sinh-nam-2025-132102.htm | Dự kiến
+  r8: TUI008 | KHA | ALL | Toàn trường (CT chuẩn) | 2026-2027 | 2026-09-01 | 20000000.0 | 28000000.0 | VND/năm | 20000000.0 | 28000000.0 | 24000000.0 | False | Báo chí | https://vietbao.vn/cap-nhat-hoc-phi-nam-hoc-2026-2027-cua-hon-120-truong-dai-hoc-598742.html | CT chuẩn
+  r9: TUI009 | YHB | YHB_7720101 | Theo ngành | 2023-2024 | 2023-09-01 | 55200000.0 | 55200000.0 | VND/năm | 55200000.0 | 55200000.0 | 55200000.0 | False | Báo chí | https://cafef.vn/nhat-y-nhi-duoc-tam-duoc-bach-khoa-nam-2023-dh-y-ha-noi-lay-diem-chuan-cuc-cao-du-kien-tang-hoc-phi-nganh-cao-nhat-len-den-555-trieu-dong-nam-188230823215727825.chn | Dự kiến
+  r10: TUI010 | YHB | YHB_7720115 | Theo ngành | 2023-2024 | 2023-09-01 | 55200000.0 | 55200000.0 | VND/năm | 55200000.0 | 55200000.0 | 55200000.0 | False | Báo chí | https://cafef.vn/nhat-y-nhi-duoc-tam-duoc-bach-khoa-nam-2023-dh-y-ha-noi-lay-diem-chuan-cuc-cao-du-kien-tang-hoc-phi-nganh-cao-nhat-len-den-555-trieu-dong-nam-188230823215727825.chn | Dự kiến
+  r11: TUI011 | YHB | YHB_7720501 | Theo ngành | 2023-2024 | 2023-09-01 | 27600000.0 | 27600000.0 | VND/năm | 27600000.0 | 27600000.0 | 27600000.0 | False | Báo chí | https://cafef.vn/nhat-y-nhi-duoc-tam-duoc-bach-khoa-nam-2023-dh-y-ha-noi-lay-diem-chuan-cuc-cao-du-kien-tang-hoc-phi-nganh-cao-nhat-len-den-555-trieu-dong-nam-188230823215727825.chn | Dự kiến
+  r12: TUI012 | YHB | YHB_7720301 | Theo ngành | 2023-2024 | 2023-09-01 | 41800000.0 | 41800000.0 | VND/năm | 41800000.0 | 41800000.0 | 41800000.0 | False | Báo chí | https://cafef.vn/nhat-y-nhi-duoc-tam-duoc-bach-khoa-nam-2023-dh-y-ha-noi-lay-diem-chuan-cuc-cao-du-kien-tang-hoc-phi-nganh-cao-nhat-len-den-555-trieu-dong-nam-188230823215727825.chn | Dự kiến
+  r13: TUI013 | YHB | YHB_7720601 | Theo ngành | 2023-2024 | 2023-09-01 | 41800000.0 | 41800000.0 | VND/năm | 41800000.0 | 41800000.0 | 41800000.0 | False | Báo chí | https://cafef.vn/nhat-y-nhi-duoc-tam-duoc-bach-khoa-nam-2023-dh-y-ha-noi-lay-diem-chuan-cuc-cao-du-kien-tang-hoc-phi-nganh-cao-nhat-len-den-555-trieu-dong-nam-188230823215727825.chn | Dự kiến
+  r14: TUI014 | YHB | YHB_7720701 | Theo ngành | 2023-2024 | 2023-09-01 | 20900000.0 | 20900000.0 | VND/năm | 20900000.0 | 20900000.0 | 20900000.0 | False | Báo chí | https://cafef.vn/nhat-y-nhi-duoc-tam-duoc-bach-khoa-nam-2023-dh-y-ha-noi-lay-diem-chuan-cuc-cao-du-kien-tang-hoc-phi-nganh-cao-nhat-len-den-555-trieu-dong-nam-188230823215727825.chn | Dự kiến
+  r15: TUI015 | YHB | YHB_7720401 | Theo ngành | 2023-2024 | 2023-09-01 | 20900000.0 | 20900000.0 | VND/năm | 20900000.0 | 20900000.0 | 20900000.0 | False | Báo chí | https://cafef.vn/nhat-y-nhi-duoc-tam-duoc-bach-khoa-nam-2023-dh-y-ha-noi-lay-diem-chuan-cuc-cao-du-kien-tang-hoc-phi-nganh-cao-nhat-len-den-555-trieu-dong-nam-188230823215727825.chn | Dự kiến
+  r16: TUI016 | YHB | YHB_7720101 | Theo ngành | 2024-2025 | 2024-09-01 | 55200000.0 | 55200000.0 | VND/năm | 55200000.0 | 55200000.0 | 55200000.0 | False | Chính thức (bản lưu) | https://cdn.thuvienphapluat.vn/uploads/Hoidapphapluat/2024/TTTT/240610/de-an-ts-dh-y-HN.pdf | 
+  r17: TUI017 | YHB | YHB_7720115 | Theo ngành | 2024-2025 | 2024-09-01 | 55200000.0 | 55200000.0 | VND/năm | 55200000.0 | 55200000.0 | 55200000.0 | False | Chính thức (bản lưu) | https://cdn.thuvienphapluat.vn/uploads/Hoidapphapluat/2024/TTTT/240610/de-an-ts-dh-y-HN.pdf | 
+  r18: TUI018 | YHB | YHB_7720501 | Theo ngành | 2024-2025 | 2024-09-01 | 55200000.0 | 55200000.0 | VND/năm | 55200000.0 | 55200000.0 | 55200000.0 | False | Chính thức (bản lưu) | https://cdn.thuvienphapluat.vn/uploads/Hoidapphapluat/2024/TTTT/240610/de-an-ts-dh-y-HN.pdf | 
+  r19: TUI019 | YHB | YHB_7720301 | Theo ngành | 2024-2025 | 2024-09-01 | 41800000.0 | 41800000.0 | VND/năm | 41800000.0 | 41800000.0 | 41800000.0 | False | Chính thức (bản lưu) | https://cdn.thuvienphapluat.vn/uploads/Hoidapphapluat/2024/TTTT/240610/de-an-ts-dh-y-HN.pdf | Nguồn khác ghi 27.6 triệu
+
+########## SHEET: employment ##########
+total_rows=1000
+  r0: employment_id | program_id | university_code | program_label | graduation_year | survey_year | employment_rate_pct | n_graduates | n_responses | note | source_url | source_type | survey_date | granularity
+  r1: EMP001 | BKA_IT1 | BKA | Khoa học máy tính | 2023.0 | 2024.0 | 95.28 | 239.0 | 233.0 | Toàn ngành 7480101 | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Chính thức (bản lưu) | 2024-12-31 | Ngành
+  r2: EMP002 | BKA_EE2 | BKA | KT điều khiển & tự động hóa | 2023.0 | 2024.0 | 90.74 | 527.0 | 497.0 |  | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Chính thức (bản lưu) | 2024-12-31 | Ngành
+  r3: EMP003 | BKA_ME1 | BKA | KT cơ điện tử | 2023.0 | 2024.0 | 90.35 | 436.0 | 425.0 |  | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Chính thức (bản lưu) | 2024-12-31 | Ngành
+  r4: EMP004 | BKA_CH1 | BKA | KT hóa học | 2023.0 | 2024.0 | 90.13 | 318.0 | 314.0 |  | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Chính thức (bản lưu) | 2024-12-31 | Ngành
+  r5: EMP005 | BKA_BF1 | BKA | KT sinh học | 2023.0 | 2024.0 | 94.74 | 64.0 | 57.0 |  | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Chính thức (bản lưu) | 2024-12-31 | Ngành
+  r6: EMP006 | BKA_EM3 | BKA | Quản trị kinh doanh | 2023.0 | 2024.0 | 93.42 | 82.0 | 76.0 |  | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Chính thức (bản lưu) | 2024-12-31 | Ngành
+  r7: EMP007 | BKA_FL1 | BKA | Ngôn ngữ Anh (FL1+FL2) | 2023.0 | 2024.0 | 89.33 | 181.0 | 150.0 |  | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Chính thức (bản lưu) | 2024-12-31 | Ngành
+  r8: EMP008 | BKA_IT1 | BKA | Khoa học máy tính | 2022.0 | 2023.0 | 100.0 |  |  | Trang tổng hợp | https://thidaihoc.vn/ty-le-sinh-vien-ra-truong-co-viec-lam-cua-truong-dai-hoc-bach-khoa-ha-noi-nam-2023/ | Trang tổng hợp | 2023-12-31 | Ngành
+  r9: EMP009 | BKA_EE2 | BKA | KT điều khiển & tự động hóa | 2022.0 | 2023.0 | 97.31 |  |  |  | https://thidaihoc.vn/ty-le-sinh-vien-ra-truong-co-viec-lam-cua-truong-dai-hoc-bach-khoa-ha-noi-nam-2023/ | Trang tổng hợp | 2023-12-31 | Ngành
+  r10: EMP010 | BKA_ME1 | BKA | KT cơ điện tử | 2022.0 | 2023.0 | 96.36 |  |  |  | https://thidaihoc.vn/ty-le-sinh-vien-ra-truong-co-viec-lam-cua-truong-dai-hoc-bach-khoa-ha-noi-nam-2023/ | Trang tổng hợp | 2023-12-31 | Ngành
+  r11: EMP011 | BKA_CH1 | BKA | KT hóa học | 2022.0 | 2023.0 | 96.8 |  |  |  | https://thidaihoc.vn/ty-le-sinh-vien-ra-truong-co-viec-lam-cua-truong-dai-hoc-bach-khoa-ha-noi-nam-2023/ | Trang tổng hợp | 2023-12-31 | Ngành
+  r12: EMP012 | BKA_BF1 | BKA | KT sinh học | 2022.0 | 2023.0 | 96.05 |  |  |  | https://thidaihoc.vn/ty-le-sinh-vien-ra-truong-co-viec-lam-cua-truong-dai-hoc-bach-khoa-ha-noi-nam-2023/ | Trang tổng hợp | 2023-12-31 | Ngành
+  r13: EMP013 | BKA_EM3 | BKA | Quản trị kinh doanh | 2022.0 | 2023.0 | 97.2 |  |  |  | https://thidaihoc.vn/ty-le-sinh-vien-ra-truong-co-viec-lam-cua-truong-dai-hoc-bach-khoa-ha-noi-nam-2023/ | Trang tổng hợp | 2023-12-31 | Ngành
+  r14: EMP014 | BKA_FL1 | BKA | Ngôn ngữ Anh | 2022.0 | 2023.0 | 97.35 |  |  |  | https://thidaihoc.vn/ty-le-sinh-vien-ra-truong-co-viec-lam-cua-truong-dai-hoc-bach-khoa-ha-noi-nam-2023/ | Trang tổng hợp | 2023-12-31 | Ngành
+  r15: EMP015 | KHA_7340115 | KHA | Marketing | 2021.0 | 2022.0 | 94.16 |  |  |  | https://soha.vn/so-ke-ty-le-sinh-vien-ra-truong-co-viec-lam-giua-ngoai-thuong-va-kinh-te-quoc-dan-truong-nao-thang-the-20230320071119233.htm | Báo chí | 2022-12-31 | Ngành
+  r16: EMP016 | KHA_7810201 | KHA | Quản trị khách sạn | 2021.0 | 2022.0 | 92.86 |  |  |  | https://soha.vn/so-ke-ty-le-sinh-vien-ra-truong-co-viec-lam-giua-ngoai-thuong-va-kinh-te-quoc-dan-truong-nao-thang-the-20230320071119233.htm | Báo chí | 2022-12-31 | Ngành
+  r17: EMP017 | KHA_7810201 | KHA | Quản trị khách sạn | 2023.0 | 2024.0 | 100.0 |  |  | Năm suy luận | https://kenh14.vn/7-nganh-hoc-100-sinh-vien-tot-nghiep-co-viec-lam-tai-dh-kinh-te-quoc-dan-nhieu-nganh-hot-9-diem-mon-chua-chac-do-215250814225037915.chn | Báo chí | 2024-12-31 | Ngành
+  r18: EMP018 | KHA_7340301 | KHA | Kế toán |  |  | 98.29 |  |  | Khóa không nêu rõ | https://giaoduc.net.vn/4-dh-co-the-manh-dao-tao-kinh-te-truong-nao-ti-le-sv-co-viec-lam-cao-nhat-post240595.gd | Báo chí |  | Ngành
+  r19: EMP019 | YHB_7720101 | YHB | Y khoa | 2022.0 |  | 93.0 | 510.0 |  |  | https://cdn.thuvienphapluat.vn/uploads/Hoidapphapluat/2024/TTTT/240610/de-an-ts-dh-y-HN.pdf | Chính thức (bản lưu) |  | Ngành
+
+########## SHEET: labor_demand ##########
+total_rows=1000
+  r0: demand_id | industry_group | period_end_year | metric | value | unit | source_name | source_url | note | period_end_date
+  r1: DEM001 | Toàn thị trường | 2025.0 | Tăng số việc làm so với 2024 | 2.05 | % | JobOKO 2026 | https://vn.joboko.com/blog/ra-mat-bao-cao-luong-tuyen-dung-2026-nwi5698 |  | 2025-12-31
+  r2: DEM002 | CNTT | 2025.0 | Thiếu hụt nhân lực mỗi năm (2023–2025) | 175000.0 | người/năm | TopDev 2023 | https://vneconomy.vn/viet-nam-co-the-thieu-tu-150-000-200-000-nhan-su-cong-nghe-thong-tin-moi-nam.htm | 150–200 nghìn – trung điểm | 2025-12-31
+  r3: DEM003 | CNTT | 2025.0 | Tỷ lệ DN ưu tiên tuyển | 12.2 | % | TopCV 2024-2025 | https://vneconomy.vn/mot-so-nganh-nghe-se-khat-nhan-luc-trong-nam-2025.htm |  | 2025-12-31
+  r4: DEM004 | CNTT | 2026.0 | Tỷ trọng nhu cầu tuyển dụng | 8.64 | % | TopCV 2025-2026 | https://vietbao.vn/cong-nghe-thong-tin-van-la-vua-cua-moi-nghe-578220.html | Navigos: 13% | 2026-12-31
+  r5: DEM005 | Tự động hóa - Điện - Điện tử | 2030.0 | Mục tiêu đào tạo nhân lực bán dẫn ĐH+ | 50000.0 | người | QĐ 1017/QĐ-TTg | https://vneconomy.vn/dao-tao-it-nhat-50-000-nhan-luc-co-trinh-do-tu-dai-hoc-tro-len-cho-cong-nghiep-ban-dan.htm | Mục tiêu chính sách | 2030-12-31
+  r6: DEM006 | Tự động hóa - Điện - Điện tử | 2024.0 | Tỷ trọng nhu cầu lao động TP.HCM (điện tử) | 3.09 | % | Falmi TP.HCM | https://doanhnghiephoinhap.vn/tp-ho-chi-minh-can-153500-161500-cho-lam-viec-trong-nua-cuoi-nam-40958.html | 6 tháng cuối 2024 | 2024-12-31
+  r7: DEM007 | Ô tô - Cơ khí | 2024.0 | Tỷ trọng nhu cầu lao động TP.HCM (cơ khí) | 6.79 | % | Falmi TP.HCM | https://doanhnghiephoinhap.vn/tp-ho-chi-minh-can-153500-161500-cho-lam-viec-trong-nua-cuoi-nam-40958.html |  | 2024-12-31
+  r8: DEM008 | Ô tô - Cơ khí | 2026.0 | Tỷ lệ DN sản xuất tăng tuyển | 68.0 | % | TopCV 2025-2026 | https://www.topcv.vn/thi-truong-tuyen-dung-2026-nganh-nao-len-nganh-nao-chung |  | 2026-12-31
+  r9: DEM009 | Kỹ thuật hóa học - Sinh học | 2024.0 | Tỷ trọng nhu cầu lao động TP.HCM (hóa chất–cao su–nhựa) | 1.99 | % | Falmi TP.HCM | https://doanhnghiephoinhap.vn/tp-ho-chi-minh-can-153500-161500-cho-lam-viec-trong-nua-cuoi-nam-40958.html |  | 2024-12-31
+  r10: DEM010 | Nông nghiệp - Thú y - Thực phẩm | 2024.0 | Tỷ trọng nhu cầu lao động TP.HCM (chế biến thực phẩm) | 3.73 | % | Falmi TP.HCM | https://doanhnghiephoinhap.vn/tp-ho-chi-minh-can-153500-161500-cho-lam-viec-trong-nua-cuoi-nam-40958.html |  | 2024-12-31
+  r11: DEM011 | Y khoa | 2030.0 | Nhu cầu bác sĩ giai đoạn 2021–2030 | 173400.0 | người | TopCV 2025-2026 (trích quy hoạch ngành y) | https://www.topcv.vn/thi-truong-tuyen-dung-2026-nganh-nao-len-nganh-nao-chung |  | 2030-12-31
+  r12: DEM012 | Điều dưỡng - KTYH - YTCC - Dinh dưỡng | 2030.0 | Nhu cầu điều dưỡng 2021–2030 | 313900.0 | người | TopCV 2025-2026 | https://www.topcv.vn/thi-truong-tuyen-dung-2026-nganh-nao-len-nganh-nao-chung |  | 2030-12-31
+  r13: DEM013 | Sư phạm | 2026.0 | Thiếu giáo viên so với định mức | 110930.0 | giáo viên | Bộ GD&ĐT (Tiền Phong 27/6/2026) | https://tienphong.vn/ca-nuoc-hien-con-thieu-hon-110-nghin-bien-che-giao-vien-post1854732.tpo | Năm học 2025-2026 | 2026-12-31
+  r14: DEM014 | Marketing | 2025.0 | Tỷ lệ DN ưu tiên tuyển | 9.3 | % | TopCV | https://vneconomy.vn/mot-so-nganh-nghe-se-khat-nhan-luc-trong-nam-2025.htm |  | 2025-12-31
+  r15: DEM015 | Marketing | 2026.0 | Tỷ trọng nhu cầu tuyển dụng | 8.22 | % | TopCV 2025-2026 | https://vietbao.vn/cong-nghe-thong-tin-van-la-vua-cua-moi-nghe-578220.html | 27.51% vị trí có rủi ro bị AI thay thế | 2026-12-31
+  r16: DEM016 | Quản trị kinh doanh | 2025.0 | Tỷ lệ DN ưu tiên tuyển (kinh doanh/bán hàng) | 47.6 | % | TopCV | https://vneconomy.vn/mot-so-nganh-nghe-se-khat-nhan-luc-trong-nam-2025.htm |  | 2025-12-31
+  r17: DEM017 | Quản trị kinh doanh | 2026.0 | Tỷ trọng nhu cầu tuyển dụng (kinh doanh/bán hàng) | 47.5 | % | TopCV 2025-2026 | https://vietbao.vn/cong-nghe-thong-tin-van-la-vua-cua-moi-nghe-578220.html |  | 2026-12-31
+  r18: DEM018 | Kinh tế quốc tế - Logistics | 2030.0 | Thiếu hụt nhân lực logistics | 200000.0 | người | Tổng cục GDNN – Bộ LĐTBXH | https://tuyensinhso.vn/ban-tin/tu-nay-den-nam-2030-viet-nam-thieu-hon-200000-nhan-luc-logistics-c322777.html |  | 2030-12-31
+  r19: DEM019 | Kinh tế quốc tế - Logistics | 2026.0 | Tăng trưởng ngành logistics | 15.0 | %/năm | TopCV 2025-2026 | https://www.topcv.vn/thi-truong-tuyen-dung-2026-nganh-nao-len-nganh-nao-chung | 14–16% – trung điểm | 2026-12-31
+
+########## SHEET: cutoff_forecast ##########
+total_rows=1827
+  r0: forecast_id | program_id | university_code | target_year | forecast_date | method | forecast_cutoff | actual_cutoff | error | abs_error
+  r1: FC0001 | BKA_BF-E12 | BKA | 2025.0 | 2025-06-01 | NAIVE (năm trước) | 22.0 | 21.0 | -1.0 | 1.0
+  r2: FC0002 | BKA_BF-E12 | BKA | 2025.0 | 2025-06-01 | MA2 (TB 2 năm trước) | 22.35 | 21.0 | -1.35 | 1.35
+  r3: FC0003 | BKA_BF-E12 | BKA | 2026.0 | 2026-06-01 | NAIVE (năm trước) | 21.0 | 20.3 | -0.7 | 0.7
+  r4: FC0004 | BKA_BF-E12 | BKA | 2026.0 | 2026-06-01 | MA2 (TB 2 năm trước) | 21.5 | 20.3 | -1.2 | 1.2
+  r5: FC0005 | BKA_BF-E12 | BKA | 2027.0 | 2027-06-01 | NAIVE (năm trước) | 20.3 |  |  | 
+  r6: FC0006 | BKA_BF-E12 | BKA | 2027.0 | 2027-06-01 | MA2 (TB 2 năm trước) | 20.65 |  |  | 
+  r7: FC0007 | BKA_BF-E19 | BKA | 2025.0 | 2025-06-01 | NAIVE (năm trước) | 22.0 | 20.0 | -2.0 | 2.0
+  r8: FC0008 | BKA_BF-E19 | BKA | 2025.0 | 2025-06-01 | MA2 (TB 2 năm trước) | 21.5 | 20.0 | -1.5 | 1.5
+  r9: FC0009 | BKA_BF-E19 | BKA | 2026.0 | 2026-06-01 | NAIVE (năm trước) | 20.0 | 20.06 | 0.06 | 0.06
+  r10: FC0010 | BKA_BF-E19 | BKA | 2026.0 | 2026-06-01 | MA2 (TB 2 năm trước) | 21.0 | 20.06 | -0.94 | 0.94
+  r11: FC0011 | BKA_BF-E19 | BKA | 2027.0 | 2027-06-01 | NAIVE (năm trước) | 20.06 |  |  | 
+  r12: FC0012 | BKA_BF-E19 | BKA | 2027.0 | 2027-06-01 | MA2 (TB 2 năm trước) | 20.03 |  |  | 
+  r13: FC0013 | BKA_BF1 | BKA | 2025.0 | 2025-06-01 | NAIVE (năm trước) | 24.0 | 23.02 | -0.98 | 0.98
+  r14: FC0014 | BKA_BF1 | BKA | 2025.0 | 2025-06-01 | MA2 (TB 2 năm trước) | 24.3 | 23.02 | -1.28 | 1.28
+  r15: FC0015 | BKA_BF1 | BKA | 2026.0 | 2026-06-01 | NAIVE (năm trước) | 23.02 | 24.56 | 1.54 | 1.54
+  r16: FC0016 | BKA_BF1 | BKA | 2026.0 | 2026-06-01 | MA2 (TB 2 năm trước) | 23.51 | 24.56 | 1.05 | 1.05
+  r17: FC0017 | BKA_BF1 | BKA | 2027.0 | 2027-06-01 | NAIVE (năm trước) | 24.56 |  |  | 
+  r18: FC0018 | BKA_BF1 | BKA | 2027.0 | 2027-06-01 | MA2 (TB 2 năm trước) | 23.79 |  |  | 
+  r19: FC0019 | BKA_BF2 | BKA | 2025.0 | 2025-06-01 | NAIVE (năm trước) | 24.54 | 23.38 | -1.16 | 1.16
+
+########## SHEET: program ##########
+total_rows=1000
+  r0: program_id | university_code | major_code | admission_code | major_name | program_type | khoi_nganh | khoi_nganh_name | industry_group | subject_combinations | holland_code | duration_years | years_offered | source_version | note
+  r1: BKA_IT1 | BKA | 7480101 | IT1 | Khoa học máy tính | Chuẩn | V | Toán – CNTT – kỹ thuật – công nghệ – nông nghiệp | CNTT | A00;A01 | IRC | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r2: BKA_EE2 | BKA | 7520216 | EE2 | Kỹ thuật điều khiển và tự động hóa | Chuẩn | V | Toán – CNTT – kỹ thuật – công nghệ – nông nghiệp | Tự động hóa - Điện - Điện tử | A00;A01 | RIC | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r3: BKA_ME1 | BKA | 7520114 | ME1 | Kỹ thuật cơ điện tử | Chuẩn | V | Toán – CNTT – kỹ thuật – công nghệ – nông nghiệp | Tự động hóa - Điện - Điện tử | A00;A01 | RIE | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r4: BKA_CH1 | BKA | 7520301 | CH1 | Kỹ thuật hóa học | Chuẩn | V | Toán – CNTT – kỹ thuật – công nghệ – nông nghiệp | Kỹ thuật hóa học - Sinh học | A00;B00;D07 | IRC | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r5: BKA_BF1 | BKA | 7420202 | BF1 | Kỹ thuật sinh học | Chuẩn | V | Toán – CNTT – kỹ thuật – công nghệ – nông nghiệp | Kỹ thuật hóa học - Sinh học | A00;B00;D07 | IRS | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r6: BKA_EM3 | BKA | 7340101 | EM3 | Quản trị kinh doanh | Chuẩn | III | Kinh doanh – quản lý – pháp luật | Quản trị kinh doanh | A00;A01;D01 | ESC | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r7: BKA_FL1 | BKA | 7220201 | FL1 | Tiếng Anh KHKT và công nghệ | Chuẩn | VII | Nhân văn – KHXH – du lịch – ngôn ngữ – môi trường | Ngoại ngữ - Biên phiên dịch | D01 | ASE | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r8: KHA_7340115 | KHA | 7340115 | 7340115 | Marketing | Chuẩn | III | Kinh doanh – quản lý – pháp luật | Marketing | A00;A01;D01;D07 | EAS | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r9: KHA_7310106 | KHA | 7310106 | 7310106 | Kinh tế quốc tế | Chuẩn | III | Kinh doanh – quản lý – pháp luật | Kinh tế quốc tế - Logistics | A00;A01;D01;D07 | ECI | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r10: KHA_7340201 | KHA | 7340201 | 7340201 | Tài chính - Ngân hàng | Chuẩn | III | Kinh doanh – quản lý – pháp luật | Tài chính - Ngân hàng | A00;A01;D01;D07 | CEI | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r11: KHA_7340301 | KHA | 7340301 | 7340301 | Kế toán | Chuẩn | III | Kinh doanh – quản lý – pháp luật | Kế toán | A00;A01;D01;D07 | CIE | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r12: KHA_7380107 | KHA | 7380107 | 7380107 | Luật kinh tế | Chuẩn | III | Kinh doanh – quản lý – pháp luật | Luật | A00;A01;D01;D07 | ESI | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r13: KHA_7810201 | KHA | 7810201 | 7810201 | Quản trị khách sạn | Chuẩn | VII | Nhân văn – KHXH – du lịch – ngôn ngữ – môi trường | Du lịch - Khách sạn | A00;A01;D01;D07 | ESC | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r14: KHA_7340405 | KHA | 7340405 | 7340405 | Hệ thống thông tin quản lý | Chuẩn | III | Kinh doanh – quản lý – pháp luật | Khoa học dữ liệu - HTTTQL | A00;A01;D01;D07 | CIE | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r15: YHB_7720101 | YHB | 7720101 | 7720101 | Y khoa | Chuẩn | VI | Sức khỏe | Y khoa | B00 | ISR | 6.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r16: YHB_7720501 | YHB | 7720501 | 7720501 | Răng - Hàm - Mặt | Chuẩn | VI | Sức khỏe | Răng hàm mặt - Y học cổ truyền | B00 | IRS | 6.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r17: YHB_7720115 | YHB | 7720115 | 7720115 | Y học cổ truyền | Chuẩn | VI | Sức khỏe | Răng hàm mặt - Y học cổ truyền | A00;B00 | ISR | 6.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r18: YHB_7720301 | YHB | 7720301 | 7720301 | Điều dưỡng (CT tiên tiến) | Tiên tiến/CLC | VI | Sức khỏe | Điều dưỡng - KTYH - YTCC - Dinh dưỡng | A00;B00 | SIR | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  r19: YHB_7720601 | YHB | 7720601 | 7720601 | Kỹ thuật xét nghiệm y học | Chuẩn | VI | Sức khỏe | Điều dưỡng - KTYH - YTCC - Dinh dưỡng | A00;B00 | IRC | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+
+########## SHEET: university ##########
+total_rows=1000
+  r0: university_code | university_name | short_name | tier | tier_rank | field_focus | admission_website
+  r1: BKA | Đại học Bách khoa Hà Nội | HUST | Top 1 | 1.0 | Kỹ thuật – Công nghệ | https://ts.hust.edu.vn
+  r2: KHA | Đại học Kinh tế Quốc dân | NEU | Top 1 | 2.0 | Kinh tế – Quản lý – Luật | https://tuyensinh.neu.edu.vn
+  r3: YHB | Trường Đại học Y Hà Nội | HMU | Top 1 | 3.0 | Y dược – Sức khỏe | https://tuyensinh.hmu.edu.vn
+  r4: SPH | Trường Đại học Sư phạm Hà Nội | HNUE | Nhóm khá | 4.0 | Sư phạm – KHXH | https://tuyensinh.hnue.edu.vn
+  r5: DCN | Trường Đại học Công nghiệp Hà Nội | HaUI | Nhóm trung bình | 5.0 | Công nghệ ứng dụng – Kinh tế – Ngôn ngữ | https://tuyensinh.haui.edu.vn
+  r6: TLA | Trường Đại học Thủy lợi | TLU | Nhóm trung bình – thấp | 6.0 | Xây dựng – Tài nguyên nước – Môi trường | https://tuyensinh.tlu.edu.vn
+  r7: HVN | Học viện Nông nghiệp Việt Nam | VNUA | Nhóm thấp | 7.0 | Nông nghiệp – Thú y – Thực phẩm | https://tuyensinh.vnua.edu.vn
+  r8: 
+  r9: 
+  r10: 
+  r11: 
+  r12: 
+  r13: 
+  r14: 
+  r15: 
+  r16: 
+  r17: 
+  r18: 
+  r19: 

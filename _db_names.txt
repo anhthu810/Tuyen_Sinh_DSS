@@ -1,0 +1,68 @@
+# TABLE NAME PROBE
+project: https://rihxlxjxnbobgwdzwqtp.supabase.co
+
+## EXISTS (HTTP 200, anon can reach):
+  + dim_university (rows=0)
+  + dim_program (rows=0)
+  + dim_student (rows=0)
+  + fact_exam_score (rows=0)
+  + fact_cutoff_score (rows=0)
+  + fact_quota (rows=0)
+  + fact_tuition (rows=0)
+  + fact_employment (rows=0)
+  + fact_labor_demand (rows=0)
+  + main_dataset (rows=0)
+  + fact_salary (rows=0)
+
+## NOT FOUND (HTTP 404):
+  fact_application, fact_application_method, fact_cutoff_forecast, v_main_dataset, v_student_outcome, v_coverage_real, v_coverage_sim, university, program, student, score, application, application_method, cutoff_score, quota, tuition, employment, labor_demand, cutoff_forecast, student_outcome, case_summary, kpi_sheet, data_dictionary, source_log, map_admission_code, dim_program_member_major, fact_macro_labor, universities, programs, students, applications, scores, cutoffs, quotas
+
+## OTHER (auth/err):
+  none
+
+## RAW
+dim_university             status=200 count=0
+dim_program                status=200 count=0
+dim_student                status=200 count=0
+fact_exam_score            status=200 count=0
+fact_application           status=404 count=n/a code=PGRST205
+fact_application_method    status=404 count=n/a code=PGRST205
+fact_cutoff_score          status=200 count=0
+fact_quota                 status=200 count=0
+fact_tuition               status=200 count=0
+fact_employment            status=200 count=0
+fact_labor_demand          status=200 count=0
+fact_cutoff_forecast       status=404 count=n/a code=PGRST205
+v_main_dataset             status=404 count=n/a code=PGRST205
+v_student_outcome          status=404 count=n/a code=PGRST205
+v_coverage_real            status=404 count=n/a code=PGRST205
+v_coverage_sim             status=404 count=n/a code=PGRST205
+university                 status=404 count=n/a code=PGRST205
+program                    status=404 count=n/a code=PGRST205
+student                    status=404 count=n/a code=PGRST205
+score                      status=404 count=n/a code=PGRST205
+application                status=404 count=n/a code=PGRST205
+application_method         status=404 count=n/a code=PGRST205
+cutoff_score               status=404 count=n/a code=PGRST205
+quota                      status=404 count=n/a code=PGRST205
+tuition                    status=404 count=n/a code=PGRST205
+employment                 status=404 count=n/a code=PGRST205
+labor_demand               status=404 count=n/a code=PGRST205
+cutoff_forecast            status=404 count=n/a code=PGRST205
+main_dataset               status=200 count=0
+student_outcome            status=404 count=n/a code=PGRST205
+case_summary               status=404 count=n/a code=PGRST205
+kpi_sheet                  status=404 count=n/a code=PGRST205
+data_dictionary            status=404 count=n/a code=PGRST205
+source_log                 status=404 count=n/a code=PGRST205
+map_admission_code         status=404 count=n/a code=PGRST205
+dim_program_member_major   status=404 count=n/a code=PGRST205
+fact_salary                status=200 count=0
+fact_macro_labor           status=404 count=n/a code=PGRST205
+universities               status=404 count=n/a code=PGRST205
+programs                   status=404 count=n/a code=PGRST205
+students                   status=404 count=n/a code=PGRST205
+applications               status=404 count=n/a code=PGRST205
+scores                     status=404 count=n/a code=PGRST205
+cutoffs                    status=404 count=n/a code=PGRST205
+quotas                     status=404 count=n/a code=PGRST205

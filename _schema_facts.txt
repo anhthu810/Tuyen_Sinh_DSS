@@ -1,0 +1,711 @@
+############################################################
+# PART A — FULL METADATA SHEETS (authoritative)
+############################################################
+
+==================== SHEET: README ====================
+DSS TƯ VẤN TUYỂN SINH & HƯỚNG NGHIỆP – DATA PACKAGE v5 – ĐÃ LỌC (ASSIGNMENT 1, NHÓM 5)
+Phạm vi: FULL danh mục 380 ngành/chương trình của 7 trường ĐH tại Hà Nội, 7 khối ngành (I–VII); năm tuyển sinh 2023–2026. Thu thập: 2026-10-07.
+Các trường (top → thấp): 1. HUST – Đại học Bách khoa Hà Nội (Top 1): 71 ngành; 2. NEU – Đại học Kinh tế Quốc dân (Top 1): 88 ngành; 3. HMU – Trường Đại học Y Hà Nội (Top 1): 20 ngành; 4. HNUE – Trường Đại học Sư phạm Hà Nội (Nhóm khá): 57 ngành; 5. HaUI – Trường Đại học Công nghiệp Hà Nội (Nhóm trung bình): 72 ngành; 6. TLU – Trường Đại học Thủy lợi (Nhóm trung bình – thấp): 48 ngành; 7. VNUA – Học viện Nông nghiệp Việt Nam (Nhóm thấp): 24 ngành
+1. ĐỘ PHỦ (coverage)
+• 1292 ô ngành × năm có tuyển sinh; 1273 ô (98.5%) có điểm chuẩn chính (THPT hoặc quy đổi chung). Ô còn thiếu: BKA_MS5 (2024), BKA_MS5 (2025), DCN_7340101TA (2026), DCN_7340115TA (2026), DCN_7340201TA (2026), DCN_7340301TA (2026), DCN_7480101TA (2026), DCN_7480201TA (2026), DCN_7510201TA (2026), DCN_7510203TA (2026), DCN_7510205TA (2026), DCN_7510301TA (2026), DCN_7510302TA (2026), DCN_7810101TA (2026), DCN_7810103TA (2026), DCN_7810201TA (2026), DCN_7810202TA (2026), TLA_TLA129 (2026), TLA_TLA205 (2023).
+• Dữ liệu mô phỏng v4: 500 HS, 3,096 NV, 4,587 dòng NV × phương thức; NV phủ 1291/1292 ô ngành × năm có tuyển sinh và 380/380 ngành (ô chưa có NV: BKA_MS5 (2025)).
+2. ĐỘ BỘI (multiplicity)
+• Nhiều phương thức: 2,939 dòng điểm chuẩn thuộc 13 loại phương thức; 842/1292 ô ngành × năm có ≥ 2 phương thức.
+• Nhiều nguyện vọng: mỗi HS mô phỏng 3–10 NV; mỗi NV xét bằng mọi phương thức đủ điều kiện → fact_application_method.
+• Kiểm chứng chéo: n_sources_agree + confidence trên từng dòng; 49 ngành gốc được đối chiếu lại bằng đợt thu thập v3 (ghi chú 'v3 khớp' hoặc 'v3 ghi …').
+3. QUAN HỆ BẢNG (mô hình sao)
+dim_university ─< dim_program ─< fact_cutoff_score / fact_quota / fact_cutoff_forecast / fact_employment ; dim_student ─< fact_exam_score, fact_application ─< fact_application_method >─ fact_cutoff_score
+Sheet bắt đầu bằng v_ là VIEW dẫn xuất (trong SQL là CREATE VIEW, không lưu dữ liệu): v_main_dataset, v_student_outcome, v_coverage_real, v_coverage_sim.
+fact_application_method.cutoff_id → fact_cutoff_score.cutoff_id (trống ở TUYEN_THANG) ; fact_application.program_id → dim_program ; fact_application.student_id → dim_student
+fact_tuition: theo university_code + năm (ALL = toàn trường) hoặc program_id ; fact_salary, fact_labor_demand: theo industry_group
+4. THẬT vs MÔ PHỎNG
+THẬT (có link từng dòng): danh mục ngành, điểm chuẩn, chỉ tiêu, học phí, việc làm, lương, nhu cầu nhân lực, vĩ mô. MÔ PHỎNG: 500 HS khóa 2023–2026 (200 HS gốc v2 giữ nguyên + 300 HS bổ sung v4).
+Phân loại khối ngành theo mã ngành Bộ GD&ĐT (3 chữ số đầu); nhóm nghề (industry_group) và mã Holland của 331 ngành mới do nhóm gán tự động theo tên ngành – nên rà soát lại.
+5. LƯU Ý CHẤT LƯỢNG
+• Từ 2025 nhiều trường dùng 1 điểm chuẩn quy đổi chung (QUY_DOI_CHUNG); HUST công bố theo nhóm tổ hợp (chênh 0,5 điểm). NEU 2025–2026: dòng THPT trùng QDC đã được loại.
+• Thang điểm: 30/40/100/110/150/1200/1600 – dùng cutoff_score_30 hoặc score_margin_30; dòng scale_confirmed = FALSE (SPT của ĐH Y, HSA/TSA quy đổi của HaUI 2024) không dùng để mô phỏng.
+• Phương thức OTHER (V-ACT, XTTN gộp thang 110, ĐGNL quy đổi NEU 2024) có độ tin cậy thấp. 2024 học bạ/KET_HOP_XT của HVN là ngưỡng nhận hồ sơ, không phải điểm trúng tuyển.
+• Phần lớn số liệu đến từ trang tổng hợp/báo chí vì nhiều website trường không truy cập được hoặc đăng bảng dạng ảnh – xem confidence. Học phí chủ yếu là khoảng toàn trường.
+6. CASE ĐẶC BIỆT (bổ sung v4 – xem sheet Case_Summary)
+• Loại thí sinh: Học sinh lớp 12 (đương niên): 460; Thí sinh tự do: 40. Tình trạng dự thi: Bỏ thi 1 bài thi: 12; Bỏ thi toàn bộ: 12; Có điểm liệt (≤ 1,0): 8; Dự thi đầy đủ: 436; Miễn thi Ngoại ngữ (chứng chỉ): 24; Miễn thi toàn bộ – tuyển thẳng: 8.
+• Thí sinh tự do: đã tốt nghiệp 1–2 năm trước, thi lại 3 môn của 1 tổ hợp, giữ học bạ cũ; không xét XTTH (ưu tiên xét tuyển chỉ cho HS đương niên); tốt nghiệp quá 1 năm → mất điểm ưu tiên khu vực.
+• Bỏ thi toàn bộ / bỏ thi 1 bài / điểm liệt (≤ 1,0): không đủ điều kiện công nhận tốt nghiệp → is_thpt_graduated = FALSE; NV vẫn được chấm điểm (score_eligible) nhưng is_eligible = FALSE, lý do ghi ở not_admitted_reason.
+• Miễn thi Ngoại ngữ (chứng chỉ IELTS): điểm thi NN để trống, không dùng được tổ hợp có Tiếng Anh ở phương thức THPT; phương thức kết hợp CCNN dùng IELTS quy đổi (5,0→8 … ≥7,0→10, giả định của nhóm).
+• Miễn thi toàn bộ – tuyển thẳng (đội tuyển QG/giải quốc tế): được công nhận tốt nghiệp, NV1 trúng tuyển bằng phương thức TUYEN_THANG (dòng không có cutoff_id vì không có điểm chuẩn).
+• Lưu ý KPI: K01 tính trên toàn bộ 500 HS (gồm cả HS bỏ thi) nên thấp hơn v3; K02, K06, K07 chỉ tính trên NV đủ điều kiện/trúng tuyển.
+7. LỌC DỮ LIỆU v5 (so với v4)
+• dim_university: bỏ cột city (mọi dòng = Hà Nội)
+• dim_program: bỏ cột in_simulation (v4: 380/380 = TRUE)
+• dim_student: bỏ admitted_nv_order, admitted_program_id, admitted_by_method, n_nv, n_universities_applied, admission_status → VIEW v_student_outcome
+• fact_application: bỏ cohort_year, university_code, major_name, khoi_nganh, industry_group, duration_years, n_methods_evaluated, n_methods_eligible, best_method, best_margin_30 → lấy từ dim_student/dim_program hoặc VIEW v_application_summary
+• fact_application_method: bỏ student_id, cohort_year (suy ra qua application_id)
+• fact_quota: bỏ 52 dòng chỉ tiêu DỰ KIẾN đã có số chính thức/điều chỉnh (50 BKA 2024 + 2 SPH 2025); giữ 52 dòng cùng khóa nhưng là chỉ tiêu tách theo tổ hợp (SPH 2023) hoặc CT tiếng Anh (HVN) – cộng dồn, không trùng
+• Bỏ khỏi gói chính 4 bảng tham chiếu không dùng cho KPI: fact_salary, fact_macro_labor, dim_program_member_major, map_admission_code → thư mục data/reference và file SQL reference (tùy chọn).
+• Bỏ sheet Source_URLs (link đã có ở cột source_url của từng bảng và ở Source_Log). Kết quả VIEW được đối chiếu khớp 100% với số liệu v4.
+
+==================== SHEET: Data_Dictionary ====================
+table_name | column_name | key | meaning | data_type | example_value | row_count | missing_count | notes_special_cases
+v_main_dataset | application_id | PK | Mã nguyện vọng | Text | APP00001 | 3096.0 | 0.0 | APP#####
+v_main_dataset | student_id | FK | Mã học sinh | Text | HS2023001 | 3096.0 | 0.0 | HS + năm + STT
+v_main_dataset | cohort_year |  | Năm tuyển sinh của HS | Integer | 2023 | 3096.0 | 0.0 | 2023–2026
+v_main_dataset | registration_date |  | Ngày đăng ký NV | Date | 2023-07-15 | 3096.0 | 0.0 | Ngẫu nhiên trong cửa sổ đăng ký của Bộ GD&ĐT (2026: giả định 15–28/7)
+v_main_dataset | result_date |  | Ngày công bố điểm chuẩn | Date | 2023-08-22 | 3096.0 | 0.0
+v_main_dataset | nv_order |  | Thứ tự nguyện vọng | Integer | 1 | 3096.0 | 0.0 | 1 = ưu tiên cao nhất; tối đa 10
+v_main_dataset | program_id | FK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | DCN_7480103 | 3096.0 | 0.0 | Khóa nối dim_program
+v_main_dataset | university_code | FK | Mã trường (Bộ GD&ĐT) | Text | DCN | 3096.0 | 0.0 | BKA, KHA, YHB, SPH, DCN, TLA, HVN
+v_main_dataset | major_code |  | Mã ngành 7 chữ số | Text | 7480103 | 3096.0 | 750.0
+v_main_dataset | major_name |  | Tên ngành | Text | Kỹ thuật phần mềm | 3096.0 | 0.0
+v_main_dataset | khoi_nganh |  | Khối ngành theo phân loại Bộ GD&ĐT | Text | V | 3096.0 | 0.0 | I, III, IV, V, VI, VII
+v_main_dataset | industry_group |  | Nhóm nghề – khóa nối dữ liệu lương/nhu cầu | Text | CNTT | 3096.0 | 0.0 | 20 nhóm
+v_main_dataset | ref_cutoff_30 |  | Điểm chuẩn HS tham khảo khi đặt NV (năm trước, thang 30) | Decimal | 25.32 | 3096.0 | 0.0 | Khóa 2023 dùng điểm 2023 ± nhiễu (không có 2022 trong gói)
+v_main_dataset | n_methods_evaluated |  | Số phương thức NV này được xét | Integer | 1 | 3096.0 | 0.0 | Độ bội phương thức
+v_main_dataset | n_methods_eligible |  | Số phương thức đủ điểm | Integer | 0 | 3096.0 | 0.0
+v_main_dataset | best_method |  | Phương thức cho biên điểm tốt nhất | Text | THPT | 3096.0 | 33.0 | QUY_DOI_CHUNG(TSA) = quy đổi từ TSA
+v_main_dataset | best_margin_30 |  | Biên điểm tốt nhất (quy về thang 30) | Decimal | -0.61 | 3096.0 | 33.0 | ≥ 0 là đủ điểm
+v_main_dataset | is_eligible |  | NV đủ điều kiện trúng tuyển | Boolean | False | 3096.0 | 0.0 | score_eligible VÀ đã tốt nghiệp THPT
+v_main_dataset | is_admitted |  | Trúng tuyển NV này | Boolean | False | 3096.0 | 0.0 | NV đủ điểm có thứ tự nhỏ nhất
+v_main_dataset | gender |  | Giới tính | Text | Nữ | 3096.0 | 0.0
+v_main_dataset | priority_area |  | Khu vực ưu tiên | Text | KV2-NT | 3096.0 | 0.0 | KV1, KV2-NT, KV2, KV3
+v_main_dataset | high_school_type |  | Loại trường THPT | Text | Công lập | 3096.0 | 0.0
+v_main_dataset | subject_track |  | Định hướng môn học | Text | A | 3096.0 | 0.0 | A tự nhiên–kỹ thuật, B y–sinh, C xã hội, D kinh tế–ngôn ngữ
+v_main_dataset | interest_industry |  | Nhóm nghề HS quan tâm nhất | Text | Ô tô - Cơ khí | 3096.0 | 0.0
+v_main_dataset | holland_code |  | Mã Holland (RIASEC) | Text | RIC | 3096.0 | 0.0 | HS: mô phỏng; Ngành: nhóm gán
+v_main_dataset | program_holland_code |  | Mã Holland đặc trưng của ngành | Text | IRC | 3096.0 | 0.0
+v_main_dataset | holland_match_pct |  | Holland Match Score | Decimal (%) | 100.0 | 3096.0 | 0.0 | Công thức ở KPI_Sheet
+v_main_dataset | n_test_types |  | Số loại bài thi/chứng chỉ HS có | Integer | 2 | 3096.0 | 0.0 | THPT + TSA/HSA/IELTS/SPT
+v_main_dataset | family_budget_vnd_year |  | Ngân sách gia đình cho học tập mỗi năm | Integer (VND) | 65000000 | 3096.0 | 0.0
+v_main_dataset | duration_years |  | Thời gian đào tạo chuẩn | Integer | 4 | 3096.0 | 0.0 | Y khoa/RHM/YHCT 6 năm; Thú y 5 năm
+v_main_dataset | first_year_tuition_vnd |  | Học phí năm 1 ước tính (trung điểm) | Integer (VND) | 20000000 | 3096.0 | 0.0
+v_main_dataset | tuition_is_imputed |  | Học phí năm đó không có → nội suy từ năm gần nhất (±10%/năm) | Boolean | False | 3096.0 | 0.0
+v_main_dataset | living_support_vnd_year |  | Hỗ trợ sinh hoạt NĐ 116 (SV sư phạm) | Integer (VND) | 0 | 3096.0 | 0.0 | 3,63 triệu × 10 tháng
+v_main_dataset | est_total_cost_vnd |  | Tổng chi phí toàn khóa ước tính | Integer (VND) | 308820000 | 3096.0 | 0.0 | Học phí tăng 10%/năm + sinh hoạt 54 triệu/năm − hỗ trợ
+v_main_dataset | affordability_index_pct |  | Financial Affordability Index | Decimal (%) | 118.8 | 3096.0 | 0.0 | > 100% = vượt ngân sách
+v_main_dataset | scholarship_eligibility_score |  | Điểm khả năng nhận học bổng (proxy) | Decimal | 27.9 | 3096.0 | 2642.0 | Chỉ NV trúng tuyển
+v_main_dataset | candidate_type |  | Loại thí sinh | Text | Học sinh lớp 12 (đương niên) | 3096.0 | 0.0 | Học sinh lớp 12 (đương niên) / Thí sinh tự do
+v_main_dataset | exam_status |  | Tình trạng dự thi tốt nghiệp THPT | Text | Dự thi đầy đủ | 3096.0 | 0.0 | Dự thi đầy đủ / Bỏ thi toàn bộ / Bỏ thi 1 bài / Điểm liệt / Miễn thi NN / Miễn thi toàn bộ
+v_main_dataset | is_thpt_graduated |  | Đã/được công nhận tốt nghiệp THPT | Boolean | True | 3096.0 | 0.0 | FALSE → không được trúng tuyển dù đủ điểm
+v_main_dataset | score_eligible |  | NV đủ điểm ở ít nhất 1 phương thức (chưa xét điều kiện tốt nghiệp) | Boolean | False | 3096.0 | 0.0
+v_main_dataset | not_admitted_reason |  | Lý do không trúng tuyển NV này | Text | Không đủ điểm | 3096.0 | 454.0 | Trống = trúng tuyển; xem README mục 6
+v_main_dataset | combo_is_assumed |  | Tổ hợp của ngành không đọc được từ nguồn → dùng tổ hợp mặc định theo khối | Boolean | False | 3096.0 | 0.0 | 29 ngành (năng khiếu, thiếu dữ liệu tổ hợp)
+v_student_outcome | student_id | PK | Mã học sinh | Text | HS2023001 | 500.0 | 0.0 | HS + năm + STT
+v_student_outcome | cohort_year |  | Năm tuyển sinh của HS | Integer | 2023 | 500.0 | 0.0 | 2023–2026
+v_student_outcome | special_case |  | Mã case mô phỏng | Text | NORMAL | 500.0 | 0.0 | NORMAL, TU_DO, BO_THI_TOAN_BO, BO_THI_1_MON, DIEM_LIET, MIEN_THI_NN, MIEN_THI_TOAN_BO
+v_student_outcome | exam_status |  | Tình trạng dự thi tốt nghiệp THPT | Text | Dự thi đầy đủ | 500.0 | 0.0 | Dự thi đầy đủ / Bỏ thi toàn bộ / Bỏ thi 1 bài / Điểm liệt / Miễn thi NN / Miễn thi toàn bộ
+v_student_outcome | candidate_type |  | Loại thí sinh | Text | Học sinh lớp 12 (đương niên) | 500.0 | 0.0 | Học sinh lớp 12 (đương niên) / Thí sinh tự do
+v_student_outcome | admitted_nv_order |  | Thứ tự NV trúng tuyển | Integer | 5.0 | 500.0 | 46.0 | Trống nếu trượt
+v_student_outcome | admitted_program_id |  | Chương trình trúng tuyển | Text | BKA_BF1 | 500.0 | 46.0
+v_student_outcome | admitted_by_method |  | Phương thức trúng tuyển | Text | TSA | 500.0 | 46.0
+v_student_outcome | n_nv |  | Số nguyện vọng đã đăng ký | Integer | 9 | 500.0 | 0.0 | 3–10; HS bỏ thi/tuyển thẳng có thể ít hơn
+v_student_outcome | n_universities_applied |  | Số trường khác nhau trong danh sách NV | Integer | 5 | 500.0 | 0.0
+v_student_outcome | admission_status |  | Kết quả chung | Text | Trúng tuyển | 500.0 | 0.0
+fact_application_method | app_method_id | PK | Mã dòng NV × phương thức | Text | APP00001-M1 | 4587.0 | 0.0 | APP#####-Mk
+fact_application_method | application_id | FK | Mã nguyện vọng | Text | APP00001 | 4587.0 | 0.0 | APP#####
+fact_application_method | cutoff_id | FK | Mã dòng điểm chuẩn | Text | CUT0071 | 4587.0 | 8.0 | Khóa nối fact_cutoff_score; trống ở dòng TUYEN_THANG
+fact_application_method | admission_method |  | Mã phương thức xét tuyển | Text | THPT | 4587.0 | 0.0 | THPT, QUY_DOI_CHUNG, HOC_BA, XTTH, TSA, HSA, SPT, KET_HOP_CCNN, KET_HOP_XT, SAT, XTTN_*; TUYEN_THANG (chỉ trong mô phỏng, không có cutoff_id)
+fact_application_method | combination_used |  | Tổ hợp/bài thi dùng để xét | Text | A00 | 4587.0 | 0.0
+fact_application_method | raw_score |  | Điểm gốc (tổng tổ hợp / điểm bài thi) | Decimal | 23.5 | 4587.0 | 8.0 | Thang theo score_scale
+fact_application_method | priority_bonus |  | Điểm ưu tiên sau quy tắc giảm dần | Decimal | 0.43 | 4587.0 | 8.0 | Chỉ áp dụng thang 30/40
+fact_application_method | final_score |  | Điểm xét tuyển | Decimal | 23.93 | 4587.0 | 8.0
+fact_application_method | score_scale |  | Thang điểm | Integer | 30.0 | 4587.0 | 8.0 | 30, 40, 100 (TSA), 150 (HSA), 1600 (SAT)
+fact_application_method | cutoff_score |  | Điểm chuẩn | Decimal | 24.54 | 4587.0 | 8.0
+fact_application_method | score_margin |  | Điểm xét − điểm chuẩn (thang gốc) | Decimal | -0.61 | 4587.0 | 8.0
+fact_application_method | score_margin_30 |  | Biên điểm quy về thang 30 | Decimal | -0.61 | 4587.0 | 0.0
+fact_application_method | is_eligible |  | NV đủ điều kiện trúng tuyển | Boolean | False | 4587.0 | 0.0 | score_eligible VÀ đã tốt nghiệp THPT
+fact_application_method | converted_from |  | Bài thi được nhóm quy đổi về thang 30 | Text | HSA | 4587.0 | 4111.0 | TSA/HSA khi trường không công bố điểm tương đương
+fact_application | application_id | PK | Mã nguyện vọng | Text | APP00001 | 3096.0 | 0.0 | APP#####
+fact_application | student_id | FK | Mã học sinh | Text | HS2023001 | 3096.0 | 0.0 | HS + năm + STT
+fact_application | registration_date |  | Ngày đăng ký NV | Date | 2023-07-15 | 3096.0 | 0.0 | Ngẫu nhiên trong cửa sổ đăng ký của Bộ GD&ĐT (2026: giả định 15–28/7)
+fact_application | result_date |  | Ngày công bố điểm chuẩn | Date | 2023-08-22 | 3096.0 | 0.0
+fact_application | nv_order |  | Thứ tự nguyện vọng | Integer | 1 | 3096.0 | 0.0 | 1 = ưu tiên cao nhất; tối đa 10
+fact_application | program_id | FK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | DCN_7480103 | 3096.0 | 0.0 | Khóa nối dim_program
+fact_application | ref_cutoff_30 |  | Điểm chuẩn HS tham khảo khi đặt NV (năm trước, thang 30) | Decimal | 25.32 | 3096.0 | 0.0 | Khóa 2023 dùng điểm 2023 ± nhiễu (không có 2022 trong gói)
+fact_application | is_eligible |  | NV đủ điều kiện trúng tuyển | Boolean | False | 3096.0 | 0.0 | score_eligible VÀ đã tốt nghiệp THPT
+fact_application | is_admitted |  | Trúng tuyển NV này | Boolean | False | 3096.0 | 0.0 | NV đủ điểm có thứ tự nhỏ nhất
+fact_application | holland_match_pct |  | Holland Match Score | Decimal (%) | 100.0 | 3096.0 | 0.0 | Công thức ở KPI_Sheet
+fact_application | first_year_tuition_vnd |  | Học phí năm 1 ước tính (trung điểm) | Integer (VND) | 20000000 | 3096.0 | 0.0
+fact_application | tuition_is_imputed |  | Học phí năm đó không có → nội suy từ năm gần nhất (±10%/năm) | Boolean | False | 3096.0 | 0.0
+fact_application | living_support_vnd_year |  | Hỗ trợ sinh hoạt NĐ 116 (SV sư phạm) | Integer (VND) | 0 | 3096.0 | 0.0 | 3,63 triệu × 10 tháng
+fact_application | est_total_cost_vnd |  | Tổng chi phí toàn khóa ước tính | Integer (VND) | 308820000 | 3096.0 | 0.0 | Học phí tăng 10%/năm + sinh hoạt 54 triệu/năm − hỗ trợ
+fact_application | affordability_index_pct |  | Financial Affordability Index | Decimal (%) | 118.8 | 3096.0 | 0.0 | > 100% = vượt ngân sách
+fact_application | scholarship_eligibility_score |  | Điểm khả năng nhận học bổng (proxy) | Decimal | 27.9 | 3096.0 | 2642.0 | Chỉ NV trúng tuyển
+fact_application | score_eligible |  | NV đủ điểm ở ít nhất 1 phương thức (chưa xét điều kiện tốt nghiệp) | Boolean | False | 3096.0 | 0.0
+fact_application | combo_is_assumed |  | Tổ hợp của ngành không đọc được từ nguồn → dùng tổ hợp mặc định theo khối | Boolean | False | 3096.0 | 0.0 | 29 ngành (năng khiếu, thiếu dữ liệu tổ hợp)
+fact_application | not_admitted_reason |  | Lý do không trúng tuyển NV này | Text | Không đủ điểm | 3096.0 | 454.0 | Trống = trúng tuyển; xem README mục 6
+dim_student | student_id | PK | Mã học sinh | Text | HS2023001 | 500.0 | 0.0 | HS + năm + STT
+dim_student | cohort_year |  | Năm tuyển sinh của HS | Integer | 2023 | 500.0 | 0.0 | 2023–2026
+dim_student | profile_created_date |  | Ngày tạo hồ sơ trên DSS | Date | 2023-02-22 | 500.0 | 0.0
+dim_student | gender |  | Giới tính | Text | Nữ | 500.0 | 0.0
+dim_student | priority_area |  | Khu vực ưu tiên | Text | KV2-NT | 500.0 | 0.0 | KV1, KV2-NT, KV2, KV3
+dim_student | priority_bonus_base |  | Điểm ưu tiên khu vực gốc | Decimal | 0.5 | 500.0 | 0.0
+dim_student | high_school_type |  | Loại trường THPT | Text | Công lập | 500.0 | 0.0
+dim_student | subject_track |  | Định hướng môn học | Text | A | 500.0 | 0.0 | A tự nhiên–kỹ thuật, B y–sinh, C xã hội, D kinh tế–ngôn ngữ
+dim_student | interest_industry |  | Nhóm nghề HS quan tâm nhất | Text | Ô tô - Cơ khí | 500.0 | 0.0
+dim_student | holland_code |  | Mã Holland (RIASEC) | Text | RIC | 500.0 | 0.0 | HS: mô phỏng; Ngành: nhóm gán
+dim_student | gpa_grade10 |  | Điểm TB học bạ lớp 10/11/12 | Decimal | 8.1 | 500.0 | 0.0 | Thang 10
+dim_student | gpa_grade11 |  | Điểm TB học bạ lớp 10/11/12 | Decimal | 8.3 | 500.0 | 0.0 | Thang 10
+dim_student | gpa_grade12 |  | Điểm TB học bạ lớp 10/11/12 | Decimal | 8.7 | 500.0 | 0.0 | Thang 10
+dim_student | ielts_score |  | IELTS | Decimal | 7.0 | 500.0 | 326.0 | ~70% trống
+dim_student | tsa_score |  | Điểm Đánh giá tư duy (TSA – ĐHBK) | Decimal | 52.88 | 500.0 | 350.0 | Thang 100; chỉ ~1/4 HS có
+dim_student | hsa_score |  | Điểm Đánh giá năng lực (HSA – ĐHQGHN) | Decimal | 104.0 | 500.0 | 361.0 | Thang 150; ~25% HS có
+dim_student | spt_score |  | Điểm đánh giá năng lực ĐHSP (SPT) | Decimal | 8.9 | 500.0 | 488.0 | Chỉ khóa 2023
+dim_student | family_budget_vnd_year |  | Ngân sách gia đình cho học tập mỗi năm | Integer (VND) | 65000000.0 | 500.0 | 0.0
+dim_student | n_test_types |  | Số loại bài thi/chứng chỉ HS có | Integer | 2 | 500.0 | 0.0 | THPT + TSA/HSA/IELTS/SPT
+dim_student | candidate_type |  | Loại thí sinh | Text | Học sinh lớp 12 (đương niên) | 500.0 | 0.0 | Học sinh lớp 12 (đương niên) / Thí sinh tự do
+dim_student | thpt_graduation_year |  | Năm tốt nghiệp THPT | Integer | 2023.0 | 500.0 | 32.0 | Trống = chưa/không tốt nghiệp; tự do = năm trước đó
+dim_student | is_thpt_graduated |  | Đã/được công nhận tốt nghiệp THPT | Boolean | True | 500.0 | 0.0 | FALSE → không được trúng tuyển dù đủ điểm
+dim_student | exam_status |  | Tình trạng dự thi tốt nghiệp THPT | Text | Dự thi đầy đủ | 500.0 | 0.0 | Dự thi đầy đủ / Bỏ thi toàn bộ / Bỏ thi 1 bài / Điểm liệt / Miễn thi NN / Miễn thi toàn bộ
+dim_student | special_case |  | Mã case mô phỏng | Text | NORMAL | 500.0 | 0.0 | NORMAL, TU_DO, BO_THI_TOAN_BO, BO_THI_1_MON, DIEM_LIET, MIEN_THI_NN, MIEN_THI_TOAN_BO
+dim_student | case_note |  | Diễn giải case | Text | Miễn thi Ngoại ngữ bằng IELTS 6.5; điểm NN tính 10 khi xét T | 500.0 | 396.0
+dim_student | data_batch |  | Đợt sinh dữ liệu | Text | v2 (200 HS gốc) | 500.0 | 0.0 | v2 (200 HS gốc) / v4 (bổ sung 300 HS)
+fact_exam_score | score_id | PK | Mã bản ghi điểm | Text | SC2023001 | 500.0 | 0.0
+fact_exam_score | student_id | FK | Mã học sinh | Text | HS2023001 | 500.0 | 0.0 | HS + năm + STT
+fact_exam_score | exam_year |  | Năm thi | Integer | 2023 | 500.0 | 0.0
+fact_exam_score | exam_date |  | Ngày thi (ngày đầu) | Date | 2023-06-28 | 500.0 | 0.0 | 2026: giả định 11/6 – cần xác minh
+fact_exam_score | score_math |  | Điểm thi THPT từng môn | Decimal | 8.25 | 500.0 | 26.0 | Trống = không thi môn đó (từ 2025: Toán, Văn + 2 môn tự chọn)
+fact_exam_score | score_physics |  | Điểm thi THPT từng môn | Decimal | 7.75 | 500.0 | 270.0 | Trống = không thi môn đó (từ 2025: Toán, Văn + 2 môn tự chọn)
+fact_exam_score | score_chemistry |  | Điểm thi THPT từng môn | Decimal | 7.5 | 500.0 | 235.0 | Trống = không thi môn đó (từ 2025: Toán, Văn + 2 môn tự chọn)
+fact_exam_score | score_biology |  | Điểm thi THPT từng môn | Decimal | 7.5 | 500.0 | 311.0 | Trống = không thi môn đó (từ 2025: Toán, Văn + 2 môn tự chọn)
+fact_exam_score | score_literature |  | Điểm thi THPT từng môn | Decimal | 7.25 | 500.0 | 52.0 | Trống = không thi môn đó (từ 2025: Toán, Văn + 2 môn tự chọn)
+fact_exam_score | score_history |  | Điểm thi THPT từng môn | Decimal | 8.25 | 500.0 | 355.0 | Trống = không thi môn đó (từ 2025: Toán, Văn + 2 môn tự chọn)
+fact_exam_score | score_geography |  | Điểm thi THPT từng môn | Decimal | 9.0 | 500.0 | 386.0 | Trống = không thi môn đó (từ 2025: Toán, Văn + 2 môn tự chọn)
+fact_exam_score | score_english |  | Điểm thi THPT từng môn | Decimal | 7.5 | 500.0 | 163.0 | Trống = không thi môn đó (từ 2025: Toán, Văn + 2 môn tự chọn)
+fact_exam_score | hb_math |  | Điểm TB học bạ từng môn (3 năm) | Decimal | 8.8 | 500.0 | 0.0 | Dùng cho phương thức học bạ/XTTH
+fact_exam_score | hb_physics |  | Điểm TB học bạ từng môn (3 năm) | Decimal | 8.7 | 500.0 | 0.0 | Dùng cho phương thức học bạ/XTTH
+fact_exam_score | hb_chemistry |  | Điểm TB học bạ từng môn (3 năm) | Decimal | 8.4 | 500.0 | 0.0 | Dùng cho phương thức học bạ/XTTH
+fact_exam_score | hb_biology |  | Điểm TB học bạ từng môn (3 năm) | Decimal | 8.2 | 500.0 | 0.0 | Dùng cho phương thức học bạ/XTTH
+fact_exam_score | hb_literature |  | Điểm TB học bạ từng môn (3 năm) | Decimal | 8.2 | 500.0 | 0.0 | Dùng cho phương thức học bạ/XTTH
+fact_exam_score | hb_history |  | Điểm TB học bạ từng môn (3 năm) | Decimal | 7.9 | 500.0 | 0.0 | Dùng cho phương thức học bạ/XTTH
+fact_exam_score | hb_geography |  | Điểm TB học bạ từng môn (3 năm) | Decimal | 8.0 | 500.0 | 0.0 | Dùng cho phương thức học bạ/XTTH
+fact_exam_score | hb_english |  | Điểm TB học bạ từng môn (3 năm) | Decimal | 8.5 | 500.0 | 0.0 | Dùng cho phương thức học bạ/XTTH
+fact_exam_score | registered_subjects |  | Các môn đăng ký thi | Text | math;physics;chemistry;biology;literature;english | 500.0 | 0.0 | Ngăn cách ;
+fact_exam_score | absent_subjects |  | Môn vắng thi | Text | physics | 500.0 | 476.0
+fact_exam_score | exempt_subjects |  | Môn được miễn thi | Text | english | 500.0 | 468.0 | english = miễn thi NN bằng chứng chỉ
+fact_exam_score | failing_subjects |  | Môn bị điểm liệt (≤ 1,0) | Text | biology | 500.0 | 492.0
+fact_cutoff_score | cutoff_id | PK | Mã dòng điểm chuẩn | Text | CUT0001 | 2939.0 | 0.0 | Khóa nối fact_cutoff_score; trống ở dòng TUYEN_THANG
+fact_cutoff_score | program_id | FK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | BKA_BF1 | 2939.0 | 0.0 | Khóa nối dim_program
+fact_cutoff_score | university_code | FK | Mã trường (Bộ GD&ĐT) | Text | BKA | 2939.0 | 0.0 | BKA, KHA, YHB, SPH, DCN, TLA, HVN
+fact_cutoff_score | admission_year |  | Năm tuyển sinh | Integer | 2023 | 2939.0 | 0.0
+fact_cutoff_score | announce_date |  | Ngày công bố | Date | 2023-08-22 | 2939.0 | 0.0
+fact_cutoff_score | announce_date_is_approx |  | Ngày công bố là xấp xỉ | Boolean | False | 2939.0 | 0.0
+fact_cutoff_score | admission_method |  | Mã phương thức xét tuyển | Text | THPT | 2939.0 | 0.0 | THPT, QUY_DOI_CHUNG, HOC_BA, XTTH, TSA, HSA, SPT, KET_HOP_CCNN, KET_HOP_XT, SAT, XTTN_*; TUYEN_THANG (chỉ trong mô phỏng, không có cutoff_id)
+fact_cutoff_score | method_group |  | Tên phương thức | Text | Điểm thi THPT | 2939.0 | 0.0
+fact_cutoff_score | subject_combination |  | Tổ hợp áp dụng điểm chuẩn | Text | ALL | 2939.0 | 0.0 | ALL = mọi tổ hợp của ngành; HB = học bạ
+fact_cutoff_score | cutoff_score |  | Điểm chuẩn | Decimal | 24.6 | 2939.0 | 1.0
+fact_cutoff_score | score_scale |  | Thang điểm | Integer | 30.0 | 2939.0 | 21.0 | 30, 40, 100 (TSA), 150 (HSA), 1600 (SAT)
+fact_cutoff_score | scale_confirmed |  | Thang điểm đã xác nhận | Boolean | True | 2939.0 | 0.0 | FALSE → không dùng trong mô phỏng
+fact_cutoff_score | cutoff_score_30 |  | Điểm chuẩn quy về thang 30 | Decimal | 24.6 | 2939.0 | 844.0 | Chỉ cho thang 30/40
+fact_cutoff_score | is_missing |  | Giá trị bị thiếu | Boolean | False | 2939.0 | 0.0
+fact_cutoff_score | n_sources_agree |  | Số nguồn độc lập cho cùng giá trị | Integer | 2 | 2939.0 | 0.0 | Kiểm chứng chéo
+fact_cutoff_score | confidence |  | Độ tin cậy | Text | Trung bình | 2939.0 | 0.0 | Cao: chính thức hoặc ≥3 nguồn; TB: 2 nguồn; Thấp: 1 nguồn
+fact_cutoff_score | source_type |  | Loại nguồn | Text | Báo chí | 2939.0 | 0.0
+fact_cutoff_score | source_url |  | Link nguồn | URL | https://tuoitre.vn/diem-chuan-dai-hoc-bach-khoa-ha-noi-cao-n | 2939.0 | 0.0
+fact_cutoff_score | note |  | Ghi chú | Text | v3 khớp | 2939.0 | 282.0
+fact_cutoff_score | published_code |  | Mã xét tuyển đúng như nguồn công bố | Text | BF1 | 2939.0 | 136.0 | Có thể khác program_id (mã theo tổ hợp, mã cũ…)
+fact_cutoff_score | data_version |  | Phiên bản thu thập | Text | v2 | 2939.0 | 0.0 | v2 = 49 ngành gốc; v3 = bổ sung full ngành
+fact_quota | quota_id | PK | Mã dòng chỉ tiêu | Text | QUO001 | 1366.0 | 0.0
+fact_quota | program_id | FK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | BKA_IT1 | 1366.0 | 26.0 | Khóa nối dim_program
+fact_quota | university_code | FK | Mã trường (Bộ GD&ĐT) | Text | BKA | 1366.0 | 0.0 | BKA, KHA, YHB, SPH, DCN, TLA, HVN
+fact_quota | admission_year |  | Năm tuyển sinh | Integer | 2023 | 1366.0 | 0.0
+fact_quota | plan_date |  | Ngày chuẩn hóa của đề án (quy ước 01/03) | Date | 2023-03-01 | 1366.0 | 0.0
+fact_quota | admission_method |  | Mã phương thức xét tuyển | Text | TOTAL | 1366.0 | 0.0 | THPT, QUY_DOI_CHUNG, HOC_BA, XTTH, TSA, HSA, SPT, KET_HOP_CCNN, KET_HOP_XT, SAT, XTTN_*; TUYEN_THANG (chỉ trong mô phỏng, không có cutoff_id)
+fact_quota | quota |  | Chỉ tiêu | Integer | 300 | 1366.0 | 0.0 | VNUA: chỉ tiêu chung cả nhóm ngành
+fact_quota | source_type |  | Loại nguồn | Text | Trang tổng hợp | 1366.0 | 0.0
+fact_quota | source_url |  | Link nguồn | URL | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-k | 1366.0 | 0.0
+fact_quota | note |  | Ghi chú | Text | Thấp so với 2024 – cần kiểm tra | 1366.0 | 374.0
+fact_quota | published_code |  | Mã xét tuyển đúng như nguồn công bố | Text | BF2 | 1366.0 | 166.0 | Có thể khác program_id (mã theo tổ hợp, mã cũ…)
+fact_quota | data_version |  | Phiên bản thu thập | Text | v2 | 1366.0 | 0.0 | v2 = 49 ngành gốc; v3 = bổ sung full ngành
+fact_quota | quota_scope |  | Phạm vi chỉ tiêu | Text | Ngành/nhóm ngành | 1366.0 | 0.0 | Ngành/nhóm ngành hoặc Toàn trường (program_id trống)
+fact_tuition | tuition_id | PK | Mã dòng học phí | Text | TUI001 | 63.0 | 0.0
+fact_tuition | university_code | FK | Mã trường (Bộ GD&ĐT) | Text | BKA | 63.0 | 0.0 | BKA, KHA, YHB, SPH, DCN, TLA, HVN
+fact_tuition | program_id | FK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | ALL | 63.0 | 0.0 | Khóa nối dim_program
+fact_tuition | granularity |  | Mức chi tiết | Text | Toàn trường (CT chuẩn) | 63.0 | 0.0
+fact_tuition | academic_year |  | Năm học | Text | 2023-2024 | 63.0 | 0.0
+fact_tuition | academic_year_start_date |  | Ngày bắt đầu năm học (quy ước 01/09) | Date | 2023-09-01 | 63.0 | 0.0
+fact_tuition | amount_min |  | Học phí min/max theo đơn vị gốc | Integer | 23000000 | 63.0 | 0.0 | Xem cột unit
+fact_tuition | amount_max |  | Học phí min/max theo đơn vị gốc | Integer | 29000000 | 63.0 | 0.0 | Xem cột unit
+fact_tuition | unit |  | Đơn vị gốc | Text | VND/năm | 63.0 | 0.0 | VND/năm hoặc VND/tín chỉ
+fact_tuition | tuition_min_vnd_year |  | Học phí min/max/trung điểm quy về VND/năm | Integer (VND) | 23000000 | 63.0 | 0.0 | Tín chỉ × 35/năm
+fact_tuition | tuition_max_vnd_year |  | Học phí min/max/trung điểm quy về VND/năm | Integer (VND) | 29000000 | 63.0 | 0.0 | Tín chỉ × 35/năm
+fact_tuition | tuition_mid_vnd_year |  | Học phí min/max/trung điểm quy về VND/năm | Integer (VND) | 26000000 | 63.0 | 0.0 | Tín chỉ × 35/năm
+fact_tuition | is_converted_from_credit |  | Đã quy đổi từ đơn giá tín chỉ | Boolean | False | 63.0 | 0.0
+fact_tuition | source_type |  | Loại nguồn | Text | Báo chí | 63.0 | 0.0
+fact_tuition | source_url |  | Link nguồn | URL | https://baoquocte.vn/du-kien-hoc-phi-dai-hoc-bach-khoa-ha-no | 63.0 | 0.0
+fact_tuition | note |  | Ghi chú | Text | Dự kiến; CT chuẩn tùy ngành | 63.0 | 32.0
+fact_employment | employment_id | PK | Mã dòng việc làm | Text | EMP001 | 37.0 | 0.0
+fact_employment | program_id | FK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | BKA_IT1 | 37.0 | 3.0 | Khóa nối dim_program
+fact_employment | university_code | FK | Mã trường (Bộ GD&ĐT) | Text | BKA | 37.0 | 0.0 | BKA, KHA, YHB, SPH, DCN, TLA, HVN
+fact_employment | program_label |  | Tên ngành/lĩnh vực theo nguồn | Text | Khoa học máy tính | 37.0 | 0.0
+fact_employment | graduation_year |  | Năm tốt nghiệp / năm khảo sát | Integer | 2023.0 | 37.0 | 4.0
+fact_employment | survey_year |  | Năm tốt nghiệp / năm khảo sát | Integer | 2024.0 | 37.0 | 8.0
+fact_employment | employment_rate_pct |  | Tỷ lệ có việc làm trong 12 tháng | Decimal (%) | 95.28 | 37.0 | 0.0
+fact_employment | n_graduates |  | Số SV tốt nghiệp / số phản hồi | Integer | 239.0 | 37.0 | 16.0
+fact_employment | n_responses |  | Số SV tốt nghiệp / số phản hồi | Integer | 233.0 | 37.0 | 29.0
+fact_employment | note |  | Ghi chú | Text | Toàn ngành 7480101 | 37.0 | 24.0
+fact_employment | source_url |  | Link nguồn | URL | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh- | 37.0 | 0.0
+fact_employment | source_type |  | Loại nguồn | Text | Chính thức (bản lưu) | 37.0 | 0.0
+fact_employment | survey_date |  | Ngày chuẩn hóa khảo sát | Date | 2024-12-31 | 37.0 | 8.0
+fact_employment | granularity |  | Mức chi tiết | Text | Ngành | 37.0 | 0.0
+fact_labor_demand | demand_id | PK | Mã dòng nhu cầu | Text | DEM001 | 22.0 | 0.0
+fact_labor_demand | industry_group |  | Nhóm nghề – khóa nối dữ liệu lương/nhu cầu | Text | Toàn thị trường | 22.0 | 0.0 | 20 nhóm
+fact_labor_demand | period_end_year |  | Năm cuối kỳ | Integer | 2025 | 22.0 | 0.0
+fact_labor_demand | metric |  | Tên chỉ số | Text | Tăng số việc làm so với 2024 | 22.0 | 0.0
+fact_labor_demand | value |  | Giá trị | Decimal | 2.05 | 22.0 | 0.0
+fact_labor_demand | unit |  | Đơn vị gốc | Text | % | 22.0 | 0.0 | VND/năm hoặc VND/tín chỉ
+fact_labor_demand | source_name |  | Tên nguồn | Text | JobOKO 2026 | 22.0 | 0.0
+fact_labor_demand | source_url |  | Link nguồn | URL | https://vn.joboko.com/blog/ra-mat-bao-cao-luong-tuyen-dung-2 | 22.0 | 0.0
+fact_labor_demand | note |  | Ghi chú | Text | 150–200 nghìn – trung điểm | 22.0 | 14.0
+fact_labor_demand | period_end_date |  | Ngày chuẩn hóa cuối kỳ | Date | 2025-12-31 | 22.0 | 0.0
+fact_cutoff_forecast | forecast_id | PK | Mã dự báo | Text | FC0001 | 1826.0 | 0.0
+fact_cutoff_forecast | program_id | FK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | BKA_BF-E12 | 1826.0 | 0.0 | Khóa nối dim_program
+fact_cutoff_forecast | university_code | FK | Mã trường (Bộ GD&ĐT) | Text | BKA | 1826.0 | 0.0 | BKA, KHA, YHB, SPH, DCN, TLA, HVN
+fact_cutoff_forecast | target_year |  | Năm được dự báo | Integer | 2025 | 1826.0 | 0.0 | 2027 chưa có thực tế
+fact_cutoff_forecast | forecast_date |  | Ngày lập dự báo (giả định) | Date | 2025-06-01 | 1826.0 | 0.0
+fact_cutoff_forecast | method |  | Phương pháp dự báo | Text | NAIVE (năm trước) | 1826.0 | 0.0
+fact_cutoff_forecast | forecast_cutoff |  | Điểm chuẩn dự báo / thực tế | Decimal | 22.0 | 1826.0 | 0.0
+fact_cutoff_forecast | actual_cutoff |  | Điểm chuẩn dự báo / thực tế | Decimal | 21.0 | 1826.0 | 693.0
+fact_cutoff_forecast | error |  | Sai số / sai số tuyệt đối | Decimal | -1.0 | 1826.0 | 693.0
+fact_cutoff_forecast | abs_error |  | Sai số / sai số tuyệt đối | Decimal | 1.0 | 1826.0 | 693.0
+v_coverage_real | program_id | FK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | BKA_BF-E12 | 1520.0 | 0.0 | Khóa nối dim_program
+v_coverage_real | university_code | FK | Mã trường (Bộ GD&ĐT) | Text | BKA | 1520.0 | 0.0 | BKA, KHA, YHB, SPH, DCN, TLA, HVN
+v_coverage_real | admission_year |  | Năm tuyển sinh | Integer | 2023 | 1520.0 | 0.0
+v_coverage_real | is_offered |  | Ngành có tuyển sinh năm đó | Boolean | True | 1520.0 | 0.0
+v_coverage_real | has_main_cutoff |  | Có điểm chuẩn chính (THPT hoặc quy đổi chung) | Boolean | True | 1520.0 | 0.0
+v_coverage_real | n_cutoff_rows |  | Số dòng điểm chuẩn | Integer | 2 | 1520.0 | 0.0
+v_coverage_real | n_admission_methods |  | Số phương thức có điểm chuẩn | Integer | 2 | 1520.0 | 0.0 | Độ bội
+v_coverage_real | methods |  | Danh sách phương thức | Text | THPT;TSA | 1520.0 | 246.0
+v_coverage_real | has_quota |  | Có chỉ tiêu | Boolean | True | 1520.0 | 0.0
+v_coverage_real | has_tuition_any |  | Có học phí (ngành hoặc toàn trường) | Boolean | True | 1520.0 | 0.0
+v_coverage_real | max_sources_agree |  | Số nguồn kiểm chứng tối đa | Integer | 2 | 1520.0 | 0.0
+v_coverage_sim | program_id | FK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | BKA_BF-E12 | 1520.0 | 0.0 | Khóa nối dim_program
+v_coverage_sim | cohort_year |  | Năm tuyển sinh của HS | Integer | 2023 | 1520.0 | 0.0 | 2023–2026
+v_coverage_sim | is_offered |  | Ngành có tuyển sinh năm đó | Boolean | True | 1520.0 | 0.0
+v_coverage_sim | n_applications |  | Số NV mô phỏng | Integer | 3 | 1520.0 | 0.0
+v_coverage_sim | n_admitted |  | Số trúng tuyển mô phỏng | Integer | 0 | 1520.0 | 0.0
+v_coverage_sim | n_methods_used |  | Số phương thức thực sự được dùng để xét | Integer | 1 | 1520.0 | 0.0
+dim_program | program_id | PK | Mã chương trình = mã trường + mã ngành/mã xét tuyển | Text | BKA_IT1 | 380.0 | 0.0 | Khóa nối dim_program
+dim_program | university_code | FK | Mã trường (Bộ GD&ĐT) | Text | BKA | 380.0 | 0.0 | BKA, KHA, YHB, SPH, DCN, TLA, HVN
+dim_program | major_code |  | Mã ngành 7 chữ số | Text | 7480101 | 380.0 | 138.0
+dim_program | admission_code |  | Mã xét tuyển riêng của trường | Text | IT1 | 380.0 | 0.0 | HUST: IT1…; TLU: TLA1xx; VNUA: nhóm HVNxx
+dim_program | major_name |  | Tên ngành | Text | Khoa học máy tính | 380.0 | 0.0
+dim_program | program_type |  | Loại chương trình | Text | Chuẩn | 380.0 | 0.0 | Chuẩn, Tiên tiến/CLC, Tiếng Anh, POHE, Liên kết, Phân hiệu Thanh Hóa, Khác
+dim_program | khoi_nganh |  | Khối ngành theo phân loại Bộ GD&ĐT | Text | V | 380.0 | 0.0 | I, III, IV, V, VI, VII
+dim_program | khoi_nganh_name |  | Tên khối ngành | Text | Toán – CNTT – kỹ thuật – công nghệ – nông nghiệp | 380.0 | 0.0
+dim_program | industry_group |  | Nhóm nghề – khóa nối dữ liệu lương/nhu cầu | Text | CNTT | 380.0 | 0.0 | 20 nhóm
+dim_program | subject_combinations |  | Tổ hợp xét tuyển dùng trong mô phỏng | Text | A00;A01 | 380.0 | 17.0 | Ngăn cách ;
+dim_program | holland_code |  | Mã Holland (RIASEC) | Text | IRC | 380.0 | 0.0 | HS: mô phỏng; Ngành: nhóm gán
+dim_program | duration_years |  | Thời gian đào tạo chuẩn | Integer | 4 | 380.0 | 0.0 | Y khoa/RHM/YHCT 6 năm; Thú y 5 năm
+dim_program | years_offered |  | Các năm có tuyển sinh | Text | 2023;2024;2025;2026 | 380.0 | 0.0 | Ngăn cách ;
+dim_program | source_version |  | Nguồn gốc dòng danh mục | Text | v2 (49 ngành gốc) | 380.0 | 0.0
+dim_program | note |  | Ghi chú | Text | Miễn học phí theo NĐ 116/2020 | 380.0 | 84.0
+dim_university | university_code | PK | Mã trường (Bộ GD&ĐT) | Text | BKA | 7.0 | 0.0 | BKA, KHA, YHB, SPH, DCN, TLA, HVN
+dim_university | university_name |  | Tên trường / viết tắt | Text | Đại học Bách khoa Hà Nội | 7.0 | 0.0
+dim_university | short_name |  | Tên trường / viết tắt | Text | HUST | 7.0 | 0.0
+dim_university | tier |  | Nhóm xếp hạng (theo mặt bằng điểm chuẩn) | Text | Top 1 | 7.0 | 0.0 | Do nhóm phân loại
+dim_university | tier_rank |  | Thứ tự từ top → thấp | Integer | 1 | 7.0 | 0.0
+dim_university | field_focus |  | Thế mạnh khối ngành | Text | Kỹ thuật – Công nghệ | 7.0 | 0.0
+dim_university | admission_website |  | Website tuyển sinh | URL | https://ts.hust.edu.vn | 7.0 | 0.0
+
+==================== SHEET: Source_Log ====================
+source_id | source_name | publisher_type | used_in_tables | collection_method | time_coverage | update_frequency | format | granularity | fields_provided | limitations_quality_risks | access_date | usage_constraints
+S01 | Điểm chuẩn, chỉ tiêu, học phí, việc làm – ĐH Bách khoa HN | Tuổi Trẻ, Báo Chính phủ, Đại biểu Nhân dân, tuyensinhso, tuyensinh247; đề án/thông tin tuyển sinh HUST (bản lưu) | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web, đọc PDF, nhập tay, đối chiếu chéo | 2023–2026 | Hàng năm | HTML/PDF → CSV | Ngành × năm × phương thức | THPT, TSA, quy đổi chung, XTTN; chỉ tiêu; học phí; tỷ lệ việc làm | Trang ts.hust.edu.vn không truy cập được; nhiều năm chỉ 1 nguồn tổng hợp; 2024 BF1 TSA nghi vấn | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S02 | Điểm chuẩn, chỉ tiêu, học phí – ĐH Kinh tế Quốc dân | Tiền Phong, Vietbao, Đại biểu Nhân dân, Dân trí, tuyensinh247, tuyensinhso | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web, nhập tay | 2023–2026 | Hàng năm | HTML → CSV | Ngành × năm × phương thức | THPT, quy đổi chung, HSA, TSA, SAT | HTTTQL 2023–2024 thang 40; chỉ tiêu 2026 độ tin cậy thấp; học phí chỉ theo khoảng | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S03 | Điểm chuẩn, chỉ tiêu, học phí, việc làm – ĐH Y Hà Nội | VnExpress, VOV, Tiền Phong, SGGP, huongnghiepviet, tuyensinh247; đề án 2024 (bản lưu) | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web, đọc PDF | 2023–2026 | Hàng năm | HTML/PDF → CSV | Ngành × năm × phương thức × tổ hợp | THPT, kết hợp CCNN, SPT; học phí theo ngành | hmu.edu.vn không truy cập được; thang SPT 2026 chưa xác nhận | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S04 | Điểm chuẩn, chỉ tiêu, chính sách học phí – ĐH Sư phạm HN | Thông báo chính thức HNUE 2026, VietnamPlus, Giáo dục VN, Tiền Phong, Tuổi Trẻ | fact_cutoff_score, fact_quota, fact_tuition | Tra cứu web | 2023–2026 | Hàng năm | HTML → CSV | Ngành × năm × tổ hợp × phương thức | THPT theo tổ hợp, SPT, XTTH, quy đổi chung; NĐ 116 | 2025 một số giá trị chênh 0,01–0,07 giữa nguồn; thiếu tỷ lệ việc làm | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S05 | Điểm chuẩn, chỉ tiêu, học phí, việc làm – ĐH Công nghiệp HN | Tin chính thức HaUI 2026, đề án 2024 (bản lưu), Đại biểu Nhân dân, hocmai, fptshop, tuyensinh247 | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web, đọc PDF | 2023–2026 | Hàng năm | HTML/PDF → CSV | Ngành × năm × phương thức | THPT, học bạ, kết hợp, HSA/TSA (2024), quy đổi chung | Thang HSA/TSA 2024 chưa xác nhận; việc làm theo lĩnh vực | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S06 | Điểm chuẩn, chỉ tiêu, học phí, việc làm – ĐH Thủy lợi | VnExpress, VietNamNet, Đại biểu Nhân dân, trangedu, tuyensinhso, tuyensinh247, tlu.edu.vn | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web | 2023–2026 | Hàng năm | HTML → CSV | Ngành × năm × phương thức | THPT, học bạ, TSA (2026) | Nhiều dòng 1 nguồn (trangedu); học phí theo tín chỉ | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S07 | Điểm chuẩn, chỉ tiêu, học phí, việc làm – Học viện Nông nghiệp VN | Báo Chính phủ, VnExpress, Báo Hà Tĩnh, tuyensinh247; QĐ học phí 3228/2025 (chính thức); vnua.edu.vn | fact_cutoff_score, fact_quota, fact_tuition, fact_employment | Tra cứu web, đọc PDF | 2023–2026 | Hàng năm | HTML/PDF → CSV | Nhóm ngành × năm × phương thức | THPT, học bạ | Xét theo nhóm ngành (HVN03 gồm 2 ngành); việc làm chỉ toàn trường | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S08 | Lương khởi điểm theo nhóm ngành | JobsGO, JobOKO, ITviec, TopDev, Navigos, khảo sát ĐHQG TP.HCM; NĐ 73/2024, NĐ 161/2026, NQ 261/2025 | fact_salary | Tra cứu báo cáo, nhập tay; quy đổi USD 25.000 | 2023–2026 | Hàng năm/liên tục | HTML → CSV | Nhóm ngành × cấp kinh nghiệm × năm | Lương min/max/TB | Lương tin tuyển dụng ≠ lương thực trả; mẫu nhỏ ở vài nghề; xu hướng nhiều năm chỉ có ở CNTT | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S09 | Nhu cầu nhân lực & xu hướng tuyển dụng | TopCV, TopDev, Falmi TP.HCM, Bộ GD&ĐT, Bộ LĐTBXH, QĐ 1017/QĐ-TTg | fact_labor_demand | Tra cứu web | 2024–2030 | Hàng năm | HTML → CSV | Nhóm ngành × năm | Tỷ trọng nhu cầu, thiếu hụt, tăng trưởng | Chỉ số khác định nghĩa giữa nguồn; Falmi là TP.HCM | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S10 | Chỉ số vĩ mô thị trường lao động | Tổng cục/Cục Thống kê, World Bank WDI | fact_macro_labor | Tra cứu web/API | 2023–2026 | Quý/năm | HTML/JSON → CSV | Toàn quốc × năm | Thất nghiệp, thu nhập, lương cơ sở | Không tách riêng trình độ đại học (WDI gồm cả cao đẳng) | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S11 | Học sinh, điểm thi, nguyện vọng, xét đa phương thức (MÔ PHỎNG) | Nhóm 5 – scripts/simulate_students.py (200 HS, seed 2026) + scripts/simulate_v4_extra.py (300 HS, seed 2027) | dim_student, fact_exam_score, fact_application, fact_application_method (+ VIEW v_main_dataset, v_student_outcome, v_coverage_sim) | Sinh dữ liệu có kiểm soát, chấm bằng điểm chuẩn THẬT (S01–S07) | Khóa 2023–2026 (500 HS = 200 v2 + 300 v4, seed 2026/2027) | Theo mùa tuyển sinh | CSV/XLSX | HS; NV; NV × phương thức | Xem Data_Dictionary | Không phải dữ liệu thật; phân phối điểm, hành vi chọn NV và tỷ lệ case đặc biệt là giả định | 2026-10-07 | Tự tạo
+S13 | Danh mục FULL ngành + điểm chuẩn đa phương thức (bổ sung v3) | tuyensinh247 (diemthi), baohatinh, vietnamplus, tuyensinhso, trangedu, hoatieu, fptshop/viettelstore, vietbao, cellphones; thông báo/đề án chính thức các trường (tuyensinh.hnue.edu.vn, hust.edu.vn, thongtintuyensinh.vn, xaydungchinhsach.chinhphu.vn, vnua.edu.vn) | dim_program, map_admission_code, dim_program_member_major, fact_cutoff_score, fact_quota | Tra cứu web theo từng trường, nhập tay, đối chiếu ≥2 nguồn khi có | 2023–2026 | Hàng năm | HTML/PDF → CSV | Ngành × năm × phương thức × tổ hợp | Mã xét tuyển, tên ngành, loại CT, tổ hợp, điểm chuẩn mọi phương thức, chỉ tiêu | Nhiều bảng dạng ảnh; mã ngành 7 số thiếu cho HUST/TLU/NEU-EP; HaUI 2026 thiếu 15 CT tiếng Anh; nhiều dòng chỉ 1 nguồn | 2026-10-07 | Số liệu công khai – trích dẫn nguồn, chỉ dùng cho mục đích học tập
+S12 | Giả định của nhóm | Nhóm 5 | KPI_Sheet (Tham số) | Giả định chuyên môn | — | Khi cần | — | — | Sinh hoạt 54 tr/năm; học phí +10%/năm; 35 tín chỉ/năm; quy đổi TSA/HSA tuyến tính; mã Holland ngành | Cần kiểm chứng thêm | 2026-10-07 | Tự tạo
+
+==================== SHEET: KPI_Sheet ====================
+kpi_id | kpi_name | decision_question | formula_definition | unit | granularity | source_tables | decision_meaning | sample_value | sample_scope
+K01 | Tỷ lệ đỗ nhóm nguyện vọng mục tiêu (NV1–NV3) | Q1 Xếp nguyện vọng thế nào để vừa có cơ hội vào ngành mơ ước, vừa chắc chắn đỗ? | Số HS trúng tuyển NV1–NV3 / Tổng số HS xét tuyển × 100 | % | HS × khóa | v_student_outcome, fact_application, fact_application_method | Thấp → danh sách quá mạo hiểm, bổ sung ngành/trường an toàn dự phòng | 0.648 | 500 HS mô phỏng (gồm case đặc biệt), 2023–2026
+K02 | Lợi thế từ phương thức xét tuyển phụ | Q1 | Số NV đỗ có phương thức tốt nhất không phải điểm thi THPT / Tổng số NV đủ điểm × 100 | % | NV × phương thức | fact_application_method, v_main_dataset | Cao → tận dụng ĐGNL/ĐGTD hoặc học bạ để tăng cơ hội đỗ | 0.3768361582 | NV đủ điểm
+K03 | Biên độ sai số dự báo điểm chuẩn | Q2 Dự báo điểm chuẩn đáng tin đến đâu? | Trung bình |Điểm chuẩn thực tế − Điểm chuẩn dự báo| (MAE, phương pháp MA2) | điểm | Ngành × năm | fact_cutoff_forecast, fact_cutoff_score | Nhỏ → yên tâm chốt thứ tự NV; lớn → giữ khoảng an toàn rộng hơn | 1.345759259 | Toàn bộ ngành thang 30, năm 2025–2026 (dữ liệu thật)
+K04 | Tốc độ tăng trưởng nhu cầu ngành | Q3 Học xong ngành này có dễ xin việc? | (Chỉ số tuyển dụng năm hiện tại − năm trước) / năm trước × 100 | % | Nhóm nghề × năm | fact_labor_demand | Dương + K05 ≥ 90% → danh mục khuyến nghị; âm → cảnh báo bão hòa | -0.2918032787 | Ví dụ CNTT 2025→2026 (minh họa – hai chỉ số TopCV khác cách đo)
+K05 | Tỷ lệ sinh viên có việc làm sau 1 năm | Q3 | Số SV có việc làm trong 12 tháng / Tổng số SV hoàn thành khảo sát × 100 | % | Ngành/lĩnh vực × khóa TN | fact_employment | ≥ 90% → đầu ra ổn định | 0.9448378378 | TB các dòng có số liệu (dữ liệu thật)
+K06 | Tổng chi phí ước tính toàn khóa | Q4 Gia đình có đủ sức lo chi phí học không? | Σ (Học phí năm đầu × 1,1^k) + (54 triệu − hỗ trợ sinh hoạt) × số năm học | VND | HS × ngành | fact_tuition, dim_program, v_main_dataset | Số tiền gia đình cần chuẩn bị cho toàn khóa | 317910594.7 | TB các NV trúng tuyển
+K07 | Chỉ số áp lực tài chính gia đình | Q4 | Tổng chi phí toàn khóa / Tổng ngân sách gia đình cho việc học × 100; ghi nhận = tỷ lệ HS vượt 100% | % | HS × ngành | v_main_dataset, dim_student | > 100% → vượt khả năng: học bổng, tín dụng hoặc trường học phí thấp hơn | 0.3325991189 | Tỷ lệ HS trúng tuyển vượt ngân sách
+THAM SỐ / GIẢ ĐỊNH
+Chi phí sinh hoạt Hà Nội (VND/năm) | 54000000.0 | Giả định: 4,5 triệu × 12 tháng
+Tăng học phí/năm | 0.1 | Giả định theo mức trần tăng
+Số tín chỉ/năm (quy đổi học phí) | 35.0 | Giả định
+Hỗ trợ sinh hoạt SV sư phạm (VND/năm) | 36300000.0 | NĐ 116/2020: 3,63 triệu × 10 tháng
+Quy đổi TSA → thang 30 | 9,6 + 0,248 × TSA | Ước lượng từ cặp điểm tương đương HUST 2026
+Quy đổi HSA → thang 30 | 14,6 + 0,117 × HSA | Ước lượng từ cặp điểm tương đương NEU 2026
+Ngưỡng giảm điểm ưu tiên | 22.5 | Quy chế tuyển sinh từ 2023
+Ngày thi THPT 2026 / cửa sổ NV 2026 | 11/06 ; 15–28/07 | Giả định – cần xác minh
+
+==================== SHEET: Case_Summary ====================
+special_case | exam_status / loại thí sinh | so_hs | so_trung_tuyen | ty_le_trung_tuyen | so_nv | so_nv_du_diem_nhung_khong_TN | quy_tac_mo_phong
+NORMAL | Dự thi đầy đủ | 396 | 385 | 0.9722222222 | 2494 | 0 | HS đương niên dự thi đầy đủ
+TU_DO | Dự thi đầy đủ – Thí sinh tự do | 40 | 39 | 0.975 | 277 | 0 | Đã TN 1–2 năm trước; thi 3 môn; không XTTH; TN quá 1 năm → mất ưu tiên KV
+BO_THI_TOAN_BO | Bỏ thi toàn bộ | 12 | 0 | 0 | 34 | 8 | Không có điểm thi → không TN; chỉ còn học bạ/ĐGNL nhưng vẫn bị loại
+BO_THI_1_MON | Bỏ thi 1 bài thi | 12 | 0 | 0 | 69 | 34 | Vắng 1 bài → không TN
+DIEM_LIET | Có điểm liệt (≤ 1,0) | 8 | 0 | 0 | 42 | 32 | 1 môn ≤ 1,0 → không TN
+MIEN_THI_NN | Miễn thi Ngoại ngữ (chứng chỉ) | 24 | 22 | 0.9166666667 | 153 | 0 | Điểm NN trống; CCNN dùng IELTS quy đổi
+MIEN_THI_TOAN_BO | Miễn thi toàn bộ – tuyển thẳng | 8 | 8 | 1 | 27 | 0 | Được công nhận TN; NV1 tuyển thẳng (TUYEN_THANG)
+TỔNG |  | 500 | 454 | 0.908 | 3096 | 74
+
+
+############################################################
+# PART B — DATA TABLES: header + 3 sample rows + distinct values
+############################################################
+
+==================== TABLE: university  (data_rows=7) ====================
+HEADER: university_code | university_name | short_name | tier | tier_rank | field_focus | admission_website
+SAMPLES:
+  BKA | Đại học Bách khoa Hà Nội | HUST | Top 1 | 1.0 | Kỹ thuật – Công nghệ | https://ts.hust.edu.vn
+  KHA | Đại học Kinh tế Quốc dân | NEU | Top 1 | 2.0 | Kinh tế – Quản lý – Luật | https://tuyensinh.neu.edu.vn
+  YHB | Trường Đại học Y Hà Nội | HMU | Top 1 | 3.0 | Y dược – Sức khỏe | https://tuyensinh.hmu.edu.vn
+COLUMN PROFILE:
+  - university_code: nulls=0/7, distinct=7 | values=[BKA; KHA; YHB; SPH; DCN; TLA; HVN]
+  - university_name: nulls=0/7, distinct=7 | values=[Đại học Bách khoa Hà Nội; Đại học Kinh tế Quốc dân; Trường Đại học Y Hà Nội; Trường Đại học Sư phạm Hà Nội; Trường Đại học Công nghiệp Hà Nội; Trường Đại học Thủy lợi; Học viện Nông nghiệp Việt Nam]
+  - short_name: nulls=0/7, distinct=7 | values=[HUST; NEU; HMU; HNUE; HaUI; TLU; VNUA]
+  - tier: nulls=0/7, distinct=5 | values=[Top 1; Nhóm khá; Nhóm trung bình; Nhóm trung bình – thấp; Nhóm thấp]
+  - tier_rank: nulls=0/7, distinct=7, numeric min=1 max=7 | values=[1.0; 2.0; 3.0; 4.0; 5.0; 6.0; 7.0]
+  - field_focus: nulls=0/7, distinct=7 | values=[Kỹ thuật – Công nghệ; Kinh tế – Quản lý – Luật; Y dược – Sức khỏe; Sư phạm – KHXH; Công nghệ ứng dụng – Kinh tế – Ngôn ngữ; Xây dựng – Tài nguyên nước – Môi trường; Nông nghiệp – Thú y – Thực phẩm]
+  - admission_website: nulls=0/7, distinct=7 | values=[https://ts.hust.edu.vn; https://tuyensinh.neu.edu.vn; https://tuyensinh.hmu.edu.vn; https://tuyensinh.hnue.edu.vn; https://tuyensinh.haui.edu.vn; https://tuyensinh.tlu.edu.vn; https://tuyensinh.vnua.edu.vn]
+
+==================== TABLE: program  (data_rows=380) ====================
+HEADER: program_id | university_code | major_code | admission_code | major_name | program_type | khoi_nganh | khoi_nganh_name | industry_group | subject_combinations | holland_code | duration_years | years_offered | source_version | note
+SAMPLES:
+  BKA_IT1 | BKA | 7480101 | IT1 | Khoa học máy tính | Chuẩn | V | Toán – CNTT – kỹ thuật – công nghệ – nông nghiệp | CNTT | A00;A01 | IRC | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  BKA_EE2 | BKA | 7520216 | EE2 | Kỹ thuật điều khiển và tự động hóa | Chuẩn | V | Toán – CNTT – kỹ thuật – công nghệ – nông nghiệp | Tự động hóa - Điện - Điện tử | A00;A01 | RIC | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+  BKA_ME1 | BKA | 7520114 | ME1 | Kỹ thuật cơ điện tử | Chuẩn | V | Toán – CNTT – kỹ thuật – công nghệ – nông nghiệp | Tự động hóa - Điện - Điện tử | A00;A01 | RIE | 4.0 | 2023;2024;2025;2026 | v2 (49 ngành gốc) | 
+COLUMN PROFILE:
+  - program_id: nulls=0/380, distinct=380 | sample=[BKA_IT1; BKA_EE2; BKA_ME1; BKA_CH1; BKA_BF1; BKA_EM3; BKA_FL1; KHA_7340115 ...]
+  - university_code: nulls=0/380, distinct=7 | values=[BKA; KHA; YHB; SPH; DCN; TLA; HVN]
+  - major_code: nulls=138/380, distinct=147, numeric min=7.1401e+06 max=7.8501e+06 | sample=[7480101; 7520216; 7520114; 7520301; 7420202; 7340101; 7220201; 7340115 ...]
+  - admission_code: nulls=0/380, distinct=357 | sample=[IT1; EE2; ME1; CH1; BF1; EM3; FL1; 7340115 ...]
+  - major_name: nulls=0/380, distinct=325 | sample=[Khoa học máy tính; Kỹ thuật điều khiển và tự động hóa; Kỹ thuật cơ điện tử; Kỹ thuật hóa học; Kỹ thuật sinh học; Quản trị kinh doanh; Tiếng Anh KHKT và công nghệ; Marketing ...]
+  - program_type: nulls=0/380, distinct=7 | values=[Chuẩn; Tiên tiến/CLC; Khác; Liên kết; Tiếng Anh; POHE; Phân hiệu Thanh Hóa]
+  - khoi_nganh: nulls=0/380, distinct=7 | values=[V; III; VII; VI; I; IV; II]
+  - khoi_nganh_name: nulls=0/380, distinct=7 | values=[Toán – CNTT – kỹ thuật – công nghệ – nông nghiệp; Kinh doanh – quản lý – pháp luật; Nhân văn – KHXH – du lịch – ngôn ngữ – môi trường; Sức khỏe; Khoa học giáo dục & đào tạo giáo viên; Khoa học sự sống – khoa học tự nhiên; Nghệ thuật]
+  - industry_group: nulls=0/380, distinct=23 | values=[CNTT; Tự động hóa - Điện - Điện tử; Kỹ thuật hóa học - Sinh học; Quản trị kinh doanh; Ngoại ngữ - Biên phiên dịch; Marketing; Kinh tế quốc tế - Logistics; Tài chính - Ngân hàng; Kế toán; Luật; Du lịch - Khách sạn; Khoa học dữ liệu - HTTTQL; Y khoa; Răng hàm mặt - Y học cổ truyền; Điều dưỡng - KTYH - YTCC - Dinh dưỡng; Sư phạm; Tâm lý học; Ô tô - Cơ khí; Xây dựng - Tài nguyên nước - Môi trường; Nông nghiệp - Thú y - Thực phẩm; Nhân văn - Khoa học xã hội; Nghệ thuật - Thiết kế; Khác]
+  - subject_combinations: nulls=17/380, distinct=80 | sample=[A00;A01; A00;B00;D07; A00;A01;D01; D01; A00;A01;D01;D07; B00; A00;B00; B00;B08;D01 ...]
+  - holland_code: nulls=0/380, distinct=26 | values=[IRC; RIC; RIE; IRS; ESC; ASE; EAS; ECI; CEI; CIE; ESI; ISR; SIR; SIE; ISC; SIC; SAE; SAI; SIA; AES; ESA; RIS; ECR; ICE; AER; SEC]
+  - duration_years: nulls=0/380, distinct=3, numeric min=4 max=6 | values=[4.0; 6.0; 5.0]
+  - years_offered: nulls=0/380, distinct=6 | values=[2023;2024;2025;2026; 2026; 2023;2024;2025; 2024;2025;2026; 2025;2026; 2023]
+  - source_version: nulls=0/380, distinct=2 | values=[v2 (49 ngành gốc); v3 (bổ sung)]
+  - note: nulls=84/380, distinct=90 | sample=[Miễn học phí theo NĐ 116/2020; Xét tuyển theo nhóm HVN03; ELITECH, dạy bằng tiếng Anh; tổ hợp theo đề án 2026; tổ hợp theo đề án 2026; ELITECH, dạy bằng tiếng Anh; mới 2026; tổ hợp theo đề án 2026; mã cũ ngành Kỹ thuật In (2023-2024); từ 2024 dùng MS5; mới 2026; tổ hợp theo đề án 2026; CT Việt - Pháp PFIEV; tổ hợp theo đề án 2026 ...]
+
+==================== TABLE: student  (data_rows=500) ====================
+HEADER: student_id | cohort_year | profile_created_date | gender | priority_area | priority_bonus_base | high_school_type | subject_track | interest_industry | holland_code | gpa_grade10 | gpa_grade11 | gpa_grade12 | ielts_score | tsa_score | hsa_score | spt_score | family_budget_vnd_year | n_test_types | candidate_type | thpt_graduation_year | is_thpt_graduated | exam_status | special_case | case_note | data_batch
+SAMPLES:
+  HS2023001 | 2023.0 | 2023-02-22 | Nữ | KV2-NT | 0.5 | Công lập | A | Ô tô - Cơ khí | RIC | 8.1 | 8.3 | 8.7 |  | 52.88 |  |  | 65000000.0 | 2.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  HS2023002 | 2023.0 | 2023-05-07 | Nữ | KV3 | 0.0 | Công lập | D | Marketing | AES | 9.2 | 8.9 | 8.5 |  |  |  |  | 141000000.0 | 1.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+  HS2023003 | 2023.0 | 2023-05-06 | Nam | KV3 | 0.0 | Công lập | D | Kinh tế quốc tế - Logistics | ICE | 9.2 | 8.5 | 8.8 | 7.0 |  |  |  | 111000000.0 | 2.0 | Học sinh lớp 12 (đương niên) | 2023.0 | True | Dự thi đầy đủ | NORMAL |  | v2 (200 HS gốc)
+COLUMN PROFILE:
+  - student_id: nulls=0/500, distinct=500 | sample=[HS2023001; HS2023002; HS2023003; HS2023004; HS2023005; HS2023006; HS2023007; HS2023008 ...]
+  - cohort_year: nulls=0/500, distinct=4, numeric min=2023 max=2026 | values=[2023.0; 2024.0; 2025.0; 2026.0]
+  - profile_created_date: nulls=0/500, distinct=316 | sample=[2023-02-22; 2023-05-07; 2023-05-06; 2023-04-21; 2023-05-02; 2023-04-07; 2023-05-19; 2023-04-10 ...]
+  - gender: nulls=0/500, distinct=2 | values=[Nữ; Nam]
+  - priority_area: nulls=0/500, distinct=4 | values=[KV2-NT; KV3; KV2; KV1]
+  - priority_bonus_base: nulls=0/500, distinct=4, numeric min=0 max=0.75 | values=[0.5; 0.0; 0.25; 0.75]
+  - high_school_type: nulls=0/500, distinct=3 | values=[Công lập; Tư thục; Chuyên]
+  - subject_track: nulls=0/500, distinct=4 | values=[A; D; B; C]
+  - interest_industry: nulls=0/500, distinct=23 | values=[Ô tô - Cơ khí; Marketing; Kinh tế quốc tế - Logistics; Răng hàm mặt - Y học cổ truyền; Luật; Khoa học dữ liệu - HTTTQL; Du lịch - Khách sạn; Xây dựng - Tài nguyên nước - Môi trường; Y khoa; Tự động hóa - Điện - Điện tử; Tâm lý học; Tài chính - Ngân hàng; Sư phạm; Điều dưỡng - KTYH - YTCC - Dinh dưỡng; Quản trị kinh doanh; Kế toán; CNTT; Ngoại ngữ - Biên phiên dịch; Kỹ thuật hóa học - Sinh học; Nông nghiệp - Thú y - Thực phẩm; Nhân văn - Khoa học xã hội; Nghệ thuật - Thiết kế; Khác]
+  - holland_code: nulls=0/500, distinct=89 | sample=[RIC; AES; ICE; SRI; ISA; ICR; ESI; ESC ...]
+  - gpa_grade10: nulls=0/500, distinct=36, numeric min=6.5 max=10 | sample=[8.1; 9.2; 8.5; 8.2; 7.7; 8.6; 7.1; 8.8 ...]
+  - gpa_grade11: nulls=0/500, distinct=35, numeric min=6.4 max=10 | sample=[8.3; 8.9; 8.5; 8.7; 9.0; 7.2; 7.7; 7.5 ...]
+  - gpa_grade12: nulls=0/500, distinct=34, numeric min=6.1 max=10 | sample=[8.7; 8.5; 8.8; 9.2; 9.0; 7.3; 8.1; 8.6 ...]
+  - ielts_score: nulls=326/500, distinct=10, numeric min=4 max=8.5 | values=[7.0; 6.0; 7.5; 5.5; 6.5; 5.0; 4.5; 8.0; 8.5; 4.0]
+  - tsa_score: nulls=350/500, distinct=144, numeric min=26.34 max=100 | sample=[52.88; 78.97; 32.46; 33.56; 82.97; 62.78; 95.95; 96.42 ...]
+  - hsa_score: nulls=361/500, distinct=61, numeric min=44 max=150 | sample=[104.0; 105.0; 87.0; 114.0; 44.0; 97.0; 99.0; 81.0 ...]
+  - spt_score: nulls=488/500, distinct=12, numeric min=8.9 max=25.8 | values=[8.9; 17.16; 16.86; 12.17; 19.55; 13.5; 16.99; 25.8; 11.96; 14.81; 21.8; 12.95]
+  - family_budget_vnd_year: nulls=0/500, distinct=165, numeric min=3e+07 max=3.81e+08 | sample=[65000000.0; 141000000.0; 111000000.0; 55000000.0; 115000000.0; 214000000.0; 120000000.0; 234000000.0 ...]
+  - n_test_types: nulls=0/500, distinct=6, numeric min=0 max=5 | values=[2.0; 1.0; 4.0; 3.0; 5.0; 0.0]
+  - candidate_type: nulls=0/500, distinct=2 | values=[Học sinh lớp 12 (đương niên); Thí sinh tự do]
+  - thpt_graduation_year: nulls=32/500, distinct=6, numeric min=2021 max=2026 | values=[2023.0; 2024.0; 2025.0; 2026.0; 2022.0; 2021.0]
+  - is_thpt_graduated: nulls=0/500, distinct=2 | values=[True; False]
+  - exam_status: nulls=0/500, distinct=6 | values=[Dự thi đầy đủ; Miễn thi Ngoại ngữ (chứng chỉ); Bỏ thi 1 bài thi; Có điểm liệt (≤ 1,0); Bỏ thi toàn bộ; Miễn thi toàn bộ – tuyển thẳng]
+  - special_case: nulls=0/500, distinct=7 | values=[NORMAL; MIEN_THI_NN; BO_THI_1_MON; TU_DO; DIEM_LIET; BO_THI_TOAN_BO; MIEN_THI_TOAN_BO]
+  - case_note: nulls=396/500, distinct=28 | values=[Miễn thi Ngoại ngữ bằng IELTS 6.5; điểm NN tính 10 khi xét TN, KHÔNG dùng cho tổ hợp THPT; Miễn thi Ngoại ngữ bằng IELTS 7.0; điểm NN tính 10 khi xét TN, KHÔNG dùng cho tổ hợp THPT; Vắng bài thi physics → không đủ điều kiện xét công nhận tốt nghiệp; Đã tốt nghiệp THPT năm 2022, thi lại 3 môn tổ hợp để xét tuyển; Điểm liệt môn biology → không tốt nghiệp; Vắng bài thi math → không đủ điều kiện xét công nhận tốt nghiệp; Đã tốt nghiệp THPT năm 2021, thi lại 3 môn tổ hợp để xét tuyển; hết thời hạn hưởng ưu tiên KV; Vắng toàn bộ kỳ thi → không đủ điều kiện xét công nhận tốt nghiệp; Điểm liệt môn literature → không tốt nghiệp; Miễn thi Ngoại ngữ bằng IELTS 7.5; điểm NN tính 10 khi xét TN, KHÔNG dùng cho tổ hợp THPT; Vắng bài thi geography → không đủ điều kiện xét công nhận tốt nghiệp; Thành viên đội tuyển quốc gia/giải quốc tế: miễn thi tất cả bài thi, được công nhận TN, tuyển thẳng NV1; Miễn thi Ngoại ngữ bằng IELTS 5.5; điểm NN tính 10 khi xét TN, KHÔNG dùng cho tổ hợp THPT; Điểm liệt môn geography → không tốt nghiệp; Đã tốt nghiệp THPT năm 2023, thi lại 3 môn tổ hợp để xét tuyển; Đã tốt nghiệp THPT năm 2022, thi lại 3 môn tổ hợp để xét tuyển; hết thời hạn hưởng ưu tiên KV; Vắng bài thi chemistry → không đủ điều kiện xét công nhận tốt nghiệp; Vắng bài thi english → không đủ điều kiện xét công nhận tốt nghiệp; Đã tốt nghiệp THPT năm 2024, thi lại 3 môn tổ hợp để xét tuyển; Đã tốt nghiệp THPT năm 2023, thi lại 3 môn tổ hợp để xét tuyển; hết thời hạn hưởng ưu tiên KV; Điểm liệt môn physics → không tốt nghiệp; Miễn thi Ngoại ngữ bằng IELTS 6.0; điểm NN tính 10 khi xét TN, KHÔNG dùng cho tổ hợp THPT; Đã tốt nghiệp THPT năm 2025, thi lại 3 môn tổ hợp để xét tuyển; Vắng bài thi history → không đủ điều kiện xét công nhận tốt nghiệp; Miễn thi Ngoại ngữ bằng IELTS 8.0; điểm NN tính 10 khi xét TN, KHÔNG dùng cho tổ hợp THPT; Điểm liệt môn math → không tốt nghiệp; Điểm liệt môn english → không tốt nghiệp; Đã tốt nghiệp THPT năm 2024, thi lại 3 môn tổ hợp để xét tuyển; hết thời hạn hưởng ưu tiên KV]
+  - data_batch: nulls=0/500, distinct=2 | values=[v2 (200 HS gốc); v4 (bổ sung 300 HS)]
+
+==================== TABLE: score  (data_rows=500) ====================
+HEADER: score_id | student_id | exam_year | exam_date | score_math | score_physics | score_chemistry | score_biology | score_literature | score_history | score_geography | score_english | hb_math | hb_physics | hb_chemistry | hb_biology | hb_literature | hb_history | hb_geography | hb_english | registered_subjects | absent_subjects | exempt_subjects | failing_subjects
+SAMPLES:
+  SC2023001 | HS2023001 | 2023.0 | 2023-06-28 | 8.25 | 7.75 | 7.5 | 7.5 | 7.25 |  |  | 7.5 | 8.8 | 8.7 | 8.4 | 8.2 | 8.2 | 7.9 | 8.0 | 8.5 | math;physics;chemistry;biology;literature;english |  |  | 
+  SC2023002 | HS2023002 | 2023.0 | 2023-06-28 | 9.25 |  |  |  | 8.5 | 8.25 | 9.0 | 9.5 | 9.0 | 8.5 | 8.5 | 9.1 | 9.1 | 9.1 | 9.6 | 8.8 | math;literature;history;geography;english |  |  | 
+  SC2023003 | HS2023003 | 2023.0 | 2023-06-28 | 8.25 | 7.75 | 8.0 | 9.25 | 8.5 |  |  | 9.25 | 8.5 | 8.9 | 8.2 | 8.4 | 9.8 | 8.7 | 9.3 | 9.3 | math;physics;chemistry;biology;literature;english |  |  | 
+COLUMN PROFILE:
+  - score_id: nulls=0/500, distinct=500 | sample=[SC2023001; SC2023002; SC2023003; SC2023004; SC2023005; SC2023006; SC2023007; SC2023008 ...]
+  - student_id: nulls=0/500, distinct=500 | sample=[HS2023001; HS2023002; HS2023003; HS2023004; HS2023005; HS2023006; HS2023007; HS2023008 ...]
+  - exam_year: nulls=0/500, distinct=4, numeric min=2023 max=2026 | values=[2023.0; 2024.0; 2025.0; 2026.0]
+  - exam_date: nulls=0/500, distinct=4 | values=[2023-06-28; 2024-06-27; 2025-06-26; 2026-06-11]
+  - score_math: nulls=26/500, distinct=23, numeric min=0.75 max=10 | values=[8.25; 9.25; 8.0; 9.5; 6.75; 7.25; 7.5; 6.0; 5.75; 5.25; 9.0; 7.0; 6.25; 10.0; 6.5; 8.5; 8.75; 7.75; 5.0; 9.75; 5.5; 4.75; 0.75]
+  - score_physics: nulls=270/500, distinct=22, numeric min=0.25 max=10 | values=[7.75; 8.75; 6.5; 6.75; 7.0; 6.25; 5.0; 8.25; 5.25; 7.25; 10.0; 8.0; 9.0; 5.75; 9.75; 5.5; 9.25; 7.5; 8.5; 6.0; 9.5; 0.25]
+  - score_chemistry: nulls=235/500, distinct=23, numeric min=4 max=10 | values=[7.5; 8.0; 10.0; 7.75; 6.75; 7.25; 5.5; 5.0; 8.75; 7.0; 8.5; 5.75; 6.0; 9.75; 8.25; 9.0; 6.5; 9.25; 9.5; 6.25; 4.75; 5.25; 4.0]
+  - score_biology: nulls=311/500, distinct=23, numeric min=0.5 max=10 | values=[7.5; 9.25; 8.75; 6.5; 7.0; 6.75; 6.0; 6.25; 5.0; 9.0; 7.25; 10.0; 5.25; 7.75; 8.25; 5.75; 5.5; 8.5; 9.75; 8.0; 9.5; 0.5; 4.75]
+  - score_literature: nulls=52/500, distinct=25, numeric min=0.25 max=10 | values=[7.25; 8.5; 8.25; 5.75; 7.75; 6.0; 8.75; 5.0; 9.25; 6.75; 10.0; 8.0; 7.0; 7.5; 9.0; 9.75; 6.25; 6.5; 9.5; 5.5; 0.25; 5.25; 1.0; 4.75; 4.5]
+  - score_history: nulls=355/500, distinct=20, numeric min=5.25 max=10 | values=[8.25; 7.75; 7.25; 10.0; 9.0; 9.25; 8.75; 7.5; 8.0; 7.0; 8.5; 6.25; 9.5; 6.0; 9.75; 6.5; 5.5; 5.75; 6.75; 5.25]
+  - score_geography: nulls=386/500, distinct=19, numeric min=0.25 max=10 | values=[9.0; 7.0; 7.75; 10.0; 8.25; 8.5; 7.25; 5.75; 8.0; 6.75; 9.75; 9.25; 6.0; 8.75; 6.25; 9.5; 6.5; 7.5; 0.25]
+  - score_english: nulls=163/500, distinct=21, numeric min=0.75 max=10 | values=[7.5; 9.5; 9.25; 8.0; 8.25; 6.25; 5.25; 4.75; 9.75; 7.25; 9.0; 7.0; 6.5; 7.75; 6.75; 10.0; 8.75; 8.5; 6.0; 5.75; 0.75]
+  - hb_math: nulls=0/500, distinct=34, numeric min=6.2 max=10 | sample=[8.8; 9.0; 8.5; 8.6; 7.3; 8.3; 7.9; 8.2 ...]
+  - hb_physics: nulls=0/500, distinct=34, numeric min=6.3 max=10 | sample=[8.7; 8.5; 8.9; 8.1; 7.8; 8.0; 7.4; 7.3 ...]
+  - hb_chemistry: nulls=0/500, distinct=34, numeric min=6.4 max=10 | sample=[8.4; 8.5; 8.2; 9.0; 7.8; 7.5; 7.4; 7.9 ...]
+  - hb_biology: nulls=0/500, distinct=35, numeric min=6.4 max=10 | sample=[8.2; 9.1; 8.4; 9.4; 9.2; 7.1; 7.4; 7.9 ...]
+  - hb_literature: nulls=0/500, distinct=34, numeric min=6.2 max=10 | sample=[8.2; 9.1; 9.8; 8.6; 8.4; 8.5; 8.3; 7.0 ...]
+  - hb_history: nulls=0/500, distinct=34, numeric min=5.8 max=10 | sample=[7.9; 9.1; 8.7; 9.3; 7.7; 8.1; 8.2; 7.8 ...]
+  - hb_geography: nulls=0/500, distinct=34, numeric min=6.4 max=10 | sample=[8.0; 9.6; 9.3; 8.8; 8.3; 7.8; 8.2; 8.5 ...]
+  - hb_english: nulls=0/500, distinct=33, numeric min=6.8 max=10 | sample=[8.5; 8.8; 9.3; 8.1; 7.6; 8.4; 7.7; 7.2 ...]
+  - registered_subjects: nulls=0/500, distinct=23 | values=[math;physics;chemistry;biology;literature;english; math;literature;history;geography;english; math;literature;history;english; math;chemistry;literature;english; math;physics;literature;english; math;chemistry;biology;literature; math;literature;history;geography; math;physics;chemistry;literature; math;literature;english;physics;chemistry;biology; math;literature;english;history;geography; math;literature;english; math;chemistry;biology; math;chemistry;english; math;physics;english; literature;history;geography; math;physics;chemistry; math;literature;english;physics; math;literature;physics;chemistry; math;literature;chemistry;biology; math;literature;physics;english; math;literature;english;history; math;literature;chemistry;english; math;literature;english;chemistry]
+  - absent_subjects: nulls=476/500, distinct=13 | values=[physics; math; math;literature;english;physics;chemistry;biology; geography; math;literature;english;history;geography; chemistry; english; math;literature;chemistry;biology; math;literature;history;geography; math;literature;physics;chemistry; math;literature;english;chemistry; math;literature;english;physics; history]
+  - exempt_subjects: nulls=468/500, distinct=7 | values=[english; math;literature;english;physics;chemistry;biology; math;literature;english;history;geography; math;literature;chemistry;biology; math;literature;english;history; math;literature;english;chemistry; math;literature;physics;chemistry]
+  - failing_subjects: nulls=492/500, distinct=6 | values=[biology; literature; geography; physics; math; english]
+
+==================== TABLE: application  (data_rows=3096) ====================
+HEADER: application_id | student_id | registration_date | result_date | nv_order | program_id | ref_cutoff_30 | is_eligible | is_admitted | holland_match_pct | first_year_tuition_vnd | tuition_is_imputed | living_support_vnd_year | est_total_cost_vnd | affordability_index_pct | scholarship_eligibility_score | score_eligible | combo_is_assumed | not_admitted_reason
+SAMPLES:
+  APP00001 | HS2023001 | 2023-07-15 | 2023-08-22 | 1.0 | DCN_7480103 | 25.32 | False | False | 100.0 | 20000000.0 | False | 0.0 | 308820000.0 | 118.8 |  | False | False | Không đủ điểm
+  APP00002 | HS2023001 | 2023-07-15 | 2023-08-22 | 2.0 | DCN_7510205 | 25.14 | False | False | 100.0 | 20000000.0 | False | 0.0 | 308820000.0 | 118.8 |  | False | False | Không đủ điểm
+  APP00003 | HS2023001 | 2023-07-15 | 2023-08-22 | 3.0 | YHB_7720115 | 24.94 | False | False | 75.0 | 55200000.0 | False | 0.0 | 749902000.0 | 192.3 |  | False | False | Không đủ điểm
+COLUMN PROFILE:
+  - application_id: nulls=0/3096, distinct=3096 | sample=[APP00001; APP00002; APP00003; APP00004; APP00005; APP00006; APP00007; APP00008 ...]
+  - student_id: nulls=0/3096, distinct=500 | sample=[HS2023001; HS2023002; HS2023003; HS2023004; HS2023005; HS2023006; HS2023007; HS2023008 ...]
+  - registration_date: nulls=0/3096, distinct=61 | sample=[2023-07-15; 2023-07-13; 2023-07-18; 2023-07-20; 2023-07-21; 2023-07-12; 2023-07-28; 2023-07-14 ...]
+  - result_date: nulls=0/3096, distinct=9 | values=[2023-08-22; 2024-08-17; 2025-08-22; 2026-08-09; 2026-08-12; 2026-08-10; 2023-08-20; 2024-08-20; 2026-08-20]
+  - nv_order: nulls=0/3096, distinct=10, numeric min=1 max=10 | values=[1.0; 2.0; 3.0; 4.0; 5.0; 6.0; 7.0; 8.0; 9.0; 10.0]
+  - program_id: nulls=0/3096, distinct=380 | sample=[DCN_7480103; DCN_7510205; YHB_7720115; YHB_7720301; BKA_BF1; DCN_7510301; YHB_7720401; SPH_7480201 ...]
+  - ref_cutoff_30: nulls=0/3096, distinct=745, numeric min=15.7 max=29.42 | sample=[25.32; 25.14; 24.94; 24.83; 24.65; 24.41; 23.77; 22.63 ...]
+  - is_eligible: nulls=0/3096, distinct=2 | values=[False; True]
+  - is_admitted: nulls=0/3096, distinct=2 | values=[False; True]
+  - holland_match_pct: nulls=0/3096, distinct=11, numeric min=0 max=100 | values=[100.0; 75.0; 66.7; 83.3; 58.3; 25.0; 33.3; 16.7; 50.0; 41.7; 0.0]
+  - first_year_tuition_vnd: nulls=0/3096, distinct=53, numeric min=0 max=8e+07 | sample=[20000000.0; 55200000.0; 41800000.0; 26000000.0; 20900000.0; 11364000.0; 18322000.0; 0.0 ...]
+  - tuition_is_imputed: nulls=0/3096, distinct=2 | values=[False; True]
+  - living_support_vnd_year: nulls=0/3096, distinct=2, numeric min=0 max=3.63e+07 | values=[0.0; 36300000.0]
+  - est_total_cost_vnd: nulls=0/3096, distinct=59, numeric min=7.08e+07 max=9.41249e+08 | sample=[308820000.0; 749902000.0; 409994000.0; 336666000.0; 312997000.0; 268739000.0; 301035000.0; 70800000.0 ...]
+  - affordability_index_pct: nulls=0/3096, distinct=976, numeric min=6.3 max=436.4 | sample=[118.8; 192.3; 157.7; 129.5; 120.4; 103.4; 115.8; 12.6 ...]
+  - scholarship_eligibility_score: nulls=2642/3096, distinct=299, numeric min=5.3 max=96.1 | sample=[27.9; 41.6; 58.7; 44.3; 38.9; 6.7; 29.2; 51.1 ...]
+  - score_eligible: nulls=0/3096, distinct=2 | values=[False; True]
+  - combo_is_assumed: nulls=0/3096, distinct=2 | values=[False; True]
+  - not_admitted_reason: nulls=454/3096, distinct=9 | values=[Không đủ điểm; Đã trúng tuyển NV ưu tiên cao hơn; Không tốt nghiệp THPT (bỏ thi 1 bài thi); Đủ điểm nhưng không tốt nghiệp THPT (bỏ thi 1 bài thi); Không tốt nghiệp THPT (có điểm liệt (≤ 1,0)); Đủ điểm nhưng không tốt nghiệp THPT (có điểm liệt (≤ 1,0)); Đủ điểm nhưng không tốt nghiệp THPT (bỏ thi toàn bộ); Không tốt nghiệp THPT (bỏ thi toàn bộ); Chưa có điểm chuẩn năm này trong dữ liệu thật]
+
+==================== TABLE: application_method  (data_rows=4587) ====================
+HEADER: app_method_id | application_id | cutoff_id | admission_method | combination_used | raw_score | priority_bonus | final_score | score_scale | cutoff_score | score_margin | score_margin_30 | is_eligible | converted_from
+SAMPLES:
+  APP00001-M1 | APP00001 | CUT0071 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 24.54 | -0.61 | -0.61 | False | 
+  APP00002-M1 | APP00002 | CUT0086 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 24.26 | -0.33 | -0.33 | False | 
+  APP00003-M1 | APP00003 | CUT0301 | THPT | A00 | 23.5 | 0.43 | 23.93 | 30.0 | 24.77 | -0.84 | -0.84 | False | 
+COLUMN PROFILE:
+  - app_method_id: nulls=0/4587, distinct=4587 | sample=[APP00001-M1; APP00002-M1; APP00003-M1; APP00004-M1; APP00005-M1; APP00005-M2; APP00006-M1; APP00007-M1 ...]
+  - application_id: nulls=0/4587, distinct=3063 | sample=[APP00001; APP00002; APP00003; APP00004; APP00005; APP00006; APP00007; APP00008 ...]
+  - cutoff_id: nulls=8/4587, distinct=1902 | sample=[CUT0071; CUT0086; CUT0301; CUT0306; CUT0001; CUT0002; CUT0093; CUT0312 ...]
+  - admission_method: nulls=0/4587, distinct=9 | values=[THPT; TSA; HOC_BA; KET_HOP_CCNN; XTTH; QUY_DOI_CHUNG; HSA; SPT; TUYEN_THANG]
+  - combination_used: nulls=0/4587, distinct=22 | values=[A00; TSA; A01; D01; C00; B00; B08; D07; D15; D14; HSA; A02; B03; SPT; D08; C01; C02; C04; Giải quốc tế/đội tuyển QG; D10; C03; A07]
+  - raw_score: nulls=8/4587, distinct=331, numeric min=11.96 max=150 | sample=[23.5; 52.88; 27.25; 26.9; 25.75; 26.0; 24.0; 25.25 ...]
+  - priority_bonus: nulls=8/4587, distinct=69, numeric min=0 max=0.75 | sample=[0.43; 0.0; 0.11; 0.18; 0.5; 0.46; 0.48; 0.42 ...]
+  - final_score: nulls=8/4587, distinct=494, numeric min=11.96 max=146 | sample=[23.93; 52.88; 27.25; 26.9; 25.75; 26.0; 24.0; 25.25 ...]
+  - score_scale: nulls=8/4587, distinct=4, numeric min=30 max=150 | values=[30.0; 100.0; 40.0; 150.0]
+  - cutoff_score: nulls=8/4587, distinct=834, numeric min=15 max=127 | sample=[24.54; 24.26; 24.77; 24.0; 24.6; 51.84; 23.81; 23.19 ...]
+  - score_margin: nulls=8/4587, distinct=1244, numeric min=-42 max=48 | sample=[-0.61; -0.33; -0.84; -0.07; -0.67; 1.04; 0.12; 0.74 ...]
+  - score_margin_30: nulls=0/4587, distinct=1118, numeric min=-9.82 max=14 | sample=[-0.61; -0.33; -0.84; -0.07; -0.67; 0.31; 0.12; 0.74 ...]
+  - is_eligible: nulls=0/4587, distinct=2 | values=[False; True]
+  - converted_from: nulls=4111/4587, distinct=2 | values=[HSA; TSA]
+
+==================== TABLE: cutoff_score  (data_rows=2939) ====================
+HEADER: cutoff_id | program_id | university_code | admission_year | announce_date | announce_date_is_approx | admission_method | method_group | subject_combination | cutoff_score | score_scale | scale_confirmed | cutoff_score_30 | is_missing | n_sources_agree | confidence | source_type | source_url | note | published_code | data_version
+SAMPLES:
+  CUT0001 | BKA_BF1 | BKA | 2023.0 | 2023-08-22 | False | THPT | Điểm thi THPT | ALL | 24.6 | 30.0 | True | 24.6 | False | 2.0 | Trung bình | Báo chí | https://tuoitre.vn/diem-chuan-dai-hoc-bach-khoa-ha-noi-cao-nhat-29-42-diem-20230822111545973.htm | v3 khớp | BF1 | v2
+  CUT0002 | BKA_BF1 | BKA | 2023.0 | 2023-08-22 | False | TSA | Đánh giá tư duy (TSA) | TSA | 51.84 | 100.0 | True |  | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | BF1 | v2
+  CUT0003 | BKA_BF1 | BKA | 2024.0 | 2024-08-17 | True | THPT | Điểm thi THPT | ALL | 24.0 | 30.0 | True | 24.0 | False | 1.0 | Thấp | Trang tổng hợp | https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html | v3 khớp | BF1 | v2
+COLUMN PROFILE:
+  - cutoff_id: nulls=0/2939, distinct=2939 | sample=[CUT0001; CUT0002; CUT0003; CUT0004; CUT0005; CUT0006; CUT0007; CUT0008 ...]
+  - program_id: nulls=0/2939, distinct=373 | sample=[BKA_BF1; BKA_CH1; BKA_EE2; BKA_EM3; BKA_FL1; BKA_IT1; BKA_ME1; DCN_7220201 ...]
+  - university_code: nulls=0/2939, distinct=7 | values=[BKA; DCN; HVN; KHA; SPH; TLA; YHB]
+  - admission_year: nulls=0/2939, distinct=4, numeric min=2023 max=2026 | values=[2023.0; 2024.0; 2025.0; 2026.0]
+  - announce_date: nulls=0/2939, distinct=9 | values=[2023-08-22; 2024-08-17; 2025-08-22; 2026-08-10; 2024-07-01; 2023-07-01; 2026-08-09; 2026-08-12; 2023-06-13]
+  - announce_date_is_approx: nulls=0/2939, distinct=2 | values=[False; True]
+  - admission_method: nulls=0/2939, distinct=13 | values=[THPT; TSA; QUY_DOI_CHUNG; XTTN_CCQT; XTTN_HSNL; HOC_BA; KET_HOP_XT; HSA; SAT; XTTH; SPT; KET_HOP_CCNN; OTHER]
+  - method_group: nulls=0/2939, distinct=13 | values=[Điểm thi THPT; Đánh giá tư duy (TSA); Quy đổi chung (mọi phương thức); Xét tuyển tài năng – CCQT; Xét tuyển tài năng – hồ sơ năng lực; Học bạ; Kết hợp (giải/chứng chỉ + học bạ); Đánh giá năng lực (HSA); Chứng chỉ quốc tế (SAT); Xét tuyển tổng hợp (học bạ + điều kiện); Đánh giá năng lực ĐHSP (SPT); Kết hợp chứng chỉ ngoại ngữ; Khác (V-ACT, XTTN gộp, ĐGNL quy đổi…)]
+  - subject_combination: nulls=0/2939, distinct=185 | sample=[ALL; TSA; XTTN; D01; A00;A01; HB; KH; HSA ...]
+  - cutoff_score: nulls=1/2939, distinct=1291, numeric min=11.61 max=1590 | sample=[24.6; 51.84; 24.0; 50.29; 23.02; 24.56; 55.56; 23.7 ...]
+  - score_scale: nulls=21/2939, distinct=7, numeric min=30 max=1600 | values=[30.0; 100.0; 1600.0; 150.0; 40.0; 110.0; 1200.0]
+  - scale_confirmed: nulls=0/2939, distinct=2 | values=[True; False]
+  - cutoff_score_30: nulls=844/2939, distinct=703, numeric min=15 max=30 | sample=[24.6; 24.0; 23.02; 24.56; 23.7; 24.38; 24.05; 25.5 ...]
+  - is_missing: nulls=0/2939, distinct=2 | values=[False; True]
+  - n_sources_agree: nulls=0/2939, distinct=8, numeric min=0 max=7 | values=[2.0; 1.0; 4.0; 0.0; 3.0; 6.0; 5.0; 7.0]
+  - confidence: nulls=0/2939, distinct=4 | values=[Trung bình; Thấp; Cao; Không có dữ liệu]
+  - source_type: nulls=0/2939, distinct=4 | values=[Báo chí; Trang tổng hợp; Chính thức (bản lưu); Chính thức]
+  - source_url: nulls=0/2939, distinct=92 | sample=[https://tuoitre.vn/diem-chuan-dai-hoc-bach-khoa-ha-noi-cao-nhat-29-42-diem-20230822111545973.htm; https://tuyensinhso.vn/diem-chuan/diem-chuan-truong-dai-hoc-bach-khoa-ha-noi-c48512.html; https://diemthi.tuyensinh247.com/diem-chuan/dai-hoc-bach-khoa-ha-noi-BKA.html; https://baochinhphu.vn/diem-chuan-cua-dai-hoc-bach-khoa-ha-noi-nganh-khoa-hoc-du-lieu-va-tri-tue-nhan-tao-dan-dau-voi-2939-diem-102250822162052678.htm; https://daibieunhandan.vn/diem-chuan-dai-hoc-bach-khoa-ha-noi-nam-2026-nganh-cao-nhat-29-54-diem-10426753.html; https://giaoduc.net.vn/dai-hoc-bach-khoa-ha-noi-cong-bo-diem-chuan-2024-cao-nhat-2853-diem-post244895.gd; https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-dh-cong-nghiep-ha-noi-2024.pdf; https://daibieunhandan.vn/truong-dai-hoc-cong-nghiep-ha-noi-lay-diem-chuan-hoc-ba-cao-nhat-gan-29-diem-10339779.html ...]
+  - note: nulls=282/2939, distinct=588 | sample=[v3 khớp; Nghi vấn: có nguồn ghi 50.29 là của TROY-IT; v3 khớp; Tương đương; v3 khớp; Tổ hợp A00/A01 cao hơn 0.5; v3 khớp; Không xét TSA cho FL1 năm 2023; v3 khớp; v3 ghi 23.5 (B03;C01;C02;X02); Một điểm chuẩn quy đổi chung cho mọi phương thức; v3 khớp; Điểm TSA tương đương điểm chuẩn quy đổi; v3 khớp ...]
+  - published_code: nulls=136/2939, distinct=469 | sample=[BF1; CH1; EE2; EM3; FL1; IT1; ME1; 7220201 ...]
+  - data_version: nulls=0/2939, distinct=2 | values=[v2; v3]
+
+==================== TABLE: quota  (data_rows=1366) ====================
+HEADER: quota_id | program_id | university_code | admission_year | plan_date | admission_method | quota | source_type | source_url | note | published_code | data_version | quota_scope
+SAMPLES:
+  QUO001 | BKA_IT1 | BKA | 2023.0 | 2023-03-01 | TOTAL | 300.0 | Trang tổng hợp | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/ |  |  | v2 | Ngành/nhóm ngành
+  QUO002 | BKA_EE2 | BKA | 2023.0 | 2023-03-01 | TOTAL | 500.0 | Trang tổng hợp | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/ |  |  | v2 | Ngành/nhóm ngành
+  QUO003 | BKA_ME1 | BKA | 2023.0 | 2023-03-01 | TOTAL | 120.0 | Trang tổng hợp | https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/ | Thấp so với 2024 – cần kiểm tra |  | v2 | Ngành/nhóm ngành
+COLUMN PROFILE:
+  - quota_id: nulls=0/1366, distinct=1366 | sample=[QUO001; QUO002; QUO003; QUO004; QUO005; QUO006; QUO007; QUO008 ...]
+  - program_id: nulls=26/1366, distinct=346 | sample=[BKA_IT1; BKA_EE2; BKA_ME1; BKA_CH1; BKA_BF1; BKA_EM3; BKA_FL1; KHA_7340115 ...]
+  - university_code: nulls=0/1366, distinct=7 | values=[BKA; KHA; YHB; SPH; DCN; TLA; HVN]
+  - admission_year: nulls=0/1366, distinct=4, numeric min=2023 max=2026 | values=[2023.0; 2024.0; 2025.0; 2026.0]
+  - plan_date: nulls=0/1366, distinct=4 | values=[2023-03-01; 2024-03-01; 2025-03-01; 2026-03-01]
+  - admission_method: nulls=0/1366, distinct=11 | values=[TOTAL; THPT; KET_HOP_CCNN; SPT; HOC_BA; TSA; XTTN; HSA; XTTH; OTHER; KET_HOP_XT]
+  - quota: nulls=0/1366, distinct=194, numeric min=1 max=9880 | sample=[300.0; 500.0; 120.0; 520.0; 80.0; 100.0; 180.0; 680.0 ...]
+  - source_type: nulls=0/1366, distinct=5 | values=[Trang tổng hợp; Chính thức (bản lưu); Chính thức; Báo chí; Báo chí/Trang tổng hợp]
+  - source_url: nulls=0/1366, distinct=78 | sample=[https://huongnghiep.hocmai.vn/tuyen-sinh-2023-dai-hoc-bach-khoa-ha-noi-tang-manh-chi-tieu-xet-tuyen/; https://images2.thanhnien.vn/528068263637045248/2024/2/21/ts-bkhn-17085046088101530004936.pdf; https://images2.thanhnien.vn/528068263637045248/2025/1/15/bach-khoa-ha-noi-tuyen-sinh-2025-17369093116271447247130.pdf; https://hust.edu.vn/uploads/sys/tuyen-sinh/2026_05/qd_thong-tin-tuyen-sinh-dhbk-ha-noi-2026_final.pdf; https://daibieunhandan.vn/truong-dai-hoc-kinh-te-quoc-dan-tuyen-gan-7-000-chi-tieu-mo-moi-6-nganh-chuong-trinh-post369156.html; https://9study.vn/thong-tin-tuyen-sinh/danh-sach-nganh-dai-hoc-kinh-te-quoc-dan-2026; https://huongnghiepviet.com/tuyen-sinh/diem-chuan/diem-chuan-nam-2023-yhb-truong-dai-hoc-y-ha-noi; https://cdn.thuvienphapluat.vn/uploads/Hoidapphapluat/2024/TTTT/240610/de-an-ts-dh-y-HN.pdf ...]
+  - note: nulls=374/1366, distinct=108 | sample=[Thấp so với 2024 – cần kiểm tra; Một nguồn tổng hợp – độ tin cậy thấp; Độ tin cậy thấp; 20 mỗi tổ hợp B00/B08/D01; Giảm từ 450 theo Thông tư 34; Tổng 250 (PT2 50; SPT 100); Tổng 300; Tổng 85 ...]
+  - published_code: nulls=166/1366, distinct=351 | sample=[BF2; CH2; ED2; CH3; EE1; EM2; EM1; EM4 ...]
+  - data_version: nulls=0/1366, distinct=2 | values=[v2; v3]
+  - quota_scope: nulls=0/1366, distinct=2 | values=[Ngành/nhóm ngành; Toàn trường]
+
+==================== TABLE: tuition  (data_rows=63) ====================
+HEADER: tuition_id | university_code | program_id | granularity | academic_year | academic_year_start_date | amount_min | amount_max | unit | tuition_min_vnd_year | tuition_max_vnd_year | tuition_mid_vnd_year | is_converted_from_credit | source_type | source_url | note
+SAMPLES:
+  TUI001 | BKA | ALL | Toàn trường (CT chuẩn) | 2023-2024 | 2023-09-01 | 23000000.0 | 29000000.0 | VND/năm | 23000000.0 | 29000000.0 | 26000000.0 | False | Báo chí | https://baoquocte.vn/du-kien-hoc-phi-dai-hoc-bach-khoa-ha-noi-nam-2023-229335.html | Dự kiến; CT chuẩn tùy ngành
+  TUI002 | BKA | ALL | Toàn trường (CT chuẩn) | 2024-2025 | 2024-09-01 | 24000000.0 | 30000000.0 | VND/năm | 24000000.0 | 30000000.0 | 27000000.0 | False | Chính thức (bản lưu) | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Đề án 2024
+  TUI003 | BKA | ALL | Toàn trường (CT chuẩn) | 2025-2026 | 2025-09-01 | 28000000.0 | 35000000.0 | VND/năm | 28000000.0 | 35000000.0 | 31500000.0 | False | Báo chí | https://tuoitre.vn/dai-hoc-bach-khoa-ha-noi-tang-hoc-phi-20250614165003205.htm | Áp dụng khóa 2025
+COLUMN PROFILE:
+  - tuition_id: nulls=0/63, distinct=63 | sample=[TUI001; TUI002; TUI003; TUI004; TUI005; TUI006; TUI007; TUI008 ...]
+  - university_code: nulls=0/63, distinct=7 | values=[BKA; KHA; YHB; SPH; DCN; TLA; HVN]
+  - program_id: nulls=0/63, distinct=17 | values=[ALL; YHB_7720101; YHB_7720115; YHB_7720501; YHB_7720301; YHB_7720601; YHB_7720701; YHB_7720401; SU_PHAM; NGOAI_SU_PHAM; HVN_7640101; HVN_7620110; HVN_7620115; HVN_7420201; HVN_7540101; HVN_7480201; HVN_7340101]
+  - granularity: nulls=0/63, distinct=3 | values=[Toàn trường (CT chuẩn); Theo ngành; Nhóm ngành]
+  - academic_year: nulls=0/63, distinct=4 | values=[2023-2024; 2024-2025; 2025-2026; 2026-2027]
+  - academic_year_start_date: nulls=0/63, distinct=4 | values=[2023-09-01; 2024-09-01; 2025-09-01; 2026-09-01]
+  - amount_min: nulls=0/63, distinct=40, numeric min=0 max=8e+07 | sample=[23000000.0; 24000000.0; 28000000.0; 16000000.0; 18000000.0; 20000000.0; 55200000.0; 27600000.0 ...]
+  - amount_max: nulls=0/63, distinct=39, numeric min=0 max=8e+07 | sample=[29000000.0; 30000000.0; 35000000.0; 40000000.0; 22000000.0; 25000000.0; 28000000.0; 55200000.0 ...]
+  - unit: nulls=0/63, distinct=2 | values=[VND/năm; VND/tín chỉ]
+  - tuition_min_vnd_year: nulls=0/63, distinct=40, numeric min=0 max=8e+07 | sample=[23000000.0; 24000000.0; 28000000.0; 16000000.0; 18000000.0; 20000000.0; 55200000.0; 27600000.0 ...]
+  - tuition_max_vnd_year: nulls=0/63, distinct=39, numeric min=0 max=8e+07 | sample=[29000000.0; 30000000.0; 35000000.0; 40000000.0; 22000000.0; 25000000.0; 28000000.0; 55200000.0 ...]
+  - tuition_mid_vnd_year: nulls=0/63, distinct=42, numeric min=0 max=8e+07 | sample=[26000000.0; 27000000.0; 31500000.0; 34000000.0; 19000000.0; 21500000.0; 24000000.0; 55200000.0 ...]
+  - is_converted_from_credit: nulls=0/63, distinct=2 | values=[False; True]
+  - source_type: nulls=0/63, distinct=4 | values=[Báo chí; Chính thức (bản lưu); Trang tổng hợp; Chính thức]
+  - source_url: nulls=0/63, distinct=21 | values=[https://baoquocte.vn/du-kien-hoc-phi-dai-hoc-bach-khoa-ha-noi-nam-2023-229335.html; https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf; https://tuoitre.vn/dai-hoc-bach-khoa-ha-noi-tang-hoc-phi-20250614165003205.htm; https://vnexpress.net/hoc-phi-dai-hoc-bach-khoa-ha-noi-hust-nam-hoc-2026-2027-chi-tiet-nhat-5102344.html; https://tuyensinhso.vn/ban-tin/dh-kinh-te-quoc-dan-cong-bo-phuong-an-tuyen-sinh-2023-c62509.html; https://tuyensinhso.vn/ban-tin/hoc-phi-nam-2024-cua-cac-truong-dh-dao-tao-kinh-te-tu-16-trieu-dong-tro-len-c340018.html; https://tapchicongthuong.vn/dai-hoc-kinh-te-quoc-dan-cong-bo-phuong-an-tuyen-sinh-nam-2025-132102.htm; https://vietbao.vn/cap-nhat-hoc-phi-nam-hoc-2026-2027-cua-hon-120-truong-dai-hoc-598742.html; https://cafef.vn/nhat-y-nhi-duoc-tam-duoc-bach-khoa-nam-2023-dh-y-ha-noi-lay-diem-chuan-cuc-cao-du-kien-tang-hoc-phi-nganh-cao-nhat-len-den-555-trieu-dong-nam-188230823215727825.chn; https://cdn.thuvienphapluat.vn/uploads/Hoidapphapluat/2024/TTTT/240610/de-an-ts-dh-y-HN.pdf; https://giaoduc.net.vn/so-sanh-hoc-phi-truong-dai-hoc-y-ha-noi-va-truong-dai-hoc-y-duoc-tphcm-o-mua-tuyen-sinh-2026-post260956.gd; https://tuyensinh.hnue.edu.vn/thong-bao/402; https://baodanang.vn/hoc-phi-dai-hoc-su-pham-ha-noi-nam-2025-2026-3152499.html; https://cellphones.com.vn/sforum/hoc-phi-dai-hoc-cong-nghiep-ha-noi; https://vtcnews.vn/hoc-phi-truong-dai-hoc-cong-nghiep-ha-noi-tang-gan-5-trieu-dong-nam-ar887841.html; https://tuyensinhso.vn/school/dai-hoc-cong-nghiep-ha-noi.html; https://giaoduc.net.vn/truong-dai-hoc-thuy-loi-tong-thu-tiem-can-500-ty-dong-co-xu-huong-tang-dan-post256103.gd; https://tuyensinhso.vn/ban-tin/hoc-phi-cac-truong-dai-hoc-top-dau-nam-hoc-2023-2024-c316828.html; https://tuoitre.vn/phunuonline/hoc-vien-nong-nghiep-viet-nam-giam-hoc-phi-tu-nam-hoc-2024-2025-1101525791.htm; https://file.vnua.edu.vn/data/0/documents/2025/12/31/host/qd-3228-27-06-2025-dieu-chinh-muc-thu-hoc-phi-nam-hoc-2025-2026-chuan.pdf; https://luatminhkhue.vn/hoc-phi-hoc-vien-nong-nghiep-viet-nam-nam-2024-2025.aspx]
+  - note: nulls=32/63, distinct=20 | values=[Dự kiến; CT chuẩn tùy ngành; Đề án 2024; Áp dụng khóa 2025; Hơn nửa số CT chuẩn 28–40 triệu; CT chuẩn; Giống 2023 – cần kiểm tra; Dự kiến; Nguồn khác ghi 27.6 triệu; Chỉ có khoảng của nhóm; Hai nguồn mâu thuẫn; NĐ 116/2020: SV sư phạm được hỗ trợ học phí + 3.63 triệu/tháng sinh hoạt; Tâm lý học/CNTT; không phải số chính thức; 400.000 đ/tín chỉ; 500.000 đ/tín chỉ (trung bình); 770.000 đ/tín chỉ; Từ báo cáo thường niên TLU; Theo tín chỉ; Khóa K61+ theo nhóm ngành; QĐ 3228 ngày 27/06/2025; Trích QĐ 2338/QĐ-HVN – một nguồn tổng hợp]
+
+==================== TABLE: employment  (data_rows=37) ====================
+HEADER: employment_id | program_id | university_code | program_label | graduation_year | survey_year | employment_rate_pct | n_graduates | n_responses | note | source_url | source_type | survey_date | granularity
+SAMPLES:
+  EMP001 | BKA_IT1 | BKA | Khoa học máy tính | 2023.0 | 2024.0 | 95.28 | 239.0 | 233.0 | Toàn ngành 7480101 | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Chính thức (bản lưu) | 2024-12-31 | Ngành
+  EMP002 | BKA_EE2 | BKA | KT điều khiển & tự động hóa | 2023.0 | 2024.0 | 90.74 | 527.0 | 497.0 |  | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Chính thức (bản lưu) | 2024-12-31 | Ngành
+  EMP003 | BKA_ME1 | BKA | KT cơ điện tử | 2023.0 | 2024.0 | 90.35 | 436.0 | 425.0 |  | https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf | Chính thức (bản lưu) | 2024-12-31 | Ngành
+COLUMN PROFILE:
+  - employment_id: nulls=0/37, distinct=37 | sample=[EMP001; EMP002; EMP003; EMP004; EMP005; EMP006; EMP007; EMP008 ...]
+  - program_id: nulls=3/37, distinct=26 | values=[BKA_IT1; BKA_EE2; BKA_ME1; BKA_CH1; BKA_BF1; BKA_EM3; BKA_FL1; KHA_7340115; KHA_7810201; KHA_7340301; YHB_7720101; YHB_7720501; YHB_7720115; YHB_7720301; YHB_7720601; YHB_7720701; YHB_7720401; DCN_7480201; DCN_7480103; DCN_7510205; DCN_7510301; DCN_7340301; DCN_7220201; DCN_7810103; TLA_7580201; TLA_7580213]
+  - university_code: nulls=0/37, distinct=6 | values=[BKA; KHA; YHB; DCN; TLA; HVN]
+  - program_label: nulls=0/37, distinct=26 | values=[Khoa học máy tính; KT điều khiển & tự động hóa; KT cơ điện tử; KT hóa học; KT sinh học; Quản trị kinh doanh; Ngôn ngữ Anh (FL1+FL2); Ngôn ngữ Anh; Marketing; Quản trị khách sạn; Kế toán; Y khoa; Răng - Hàm - Mặt; Y học cổ truyền; Điều dưỡng; KT xét nghiệm y học; Y tế công cộng; Dinh dưỡng; Lĩnh vực Máy tính & CNTT; Lĩnh vực Công nghệ kỹ thuật; Lĩnh vực Kinh doanh & quản lý; Lĩnh vực Nhân văn; Lĩnh vực Du lịch – khách sạn; Toàn trường; Kỹ thuật xây dựng; Kỹ thuật cấp thoát nước]
+  - graduation_year: nulls=4/37, distinct=4, numeric min=2021 max=2024 | values=[2023.0; 2022.0; 2021.0; 2024.0]
+  - survey_year: nulls=8/37, distinct=5, numeric min=2022 max=2026 | values=[2024.0; 2023.0; 2022.0; 2026.0; 2025.0]
+  - employment_rate_pct: nulls=0/37, distinct=30, numeric min=85 max=100 | values=[95.28; 90.74; 90.35; 90.13; 94.74; 93.42; 89.33; 100.0; 97.31; 96.36; 96.8; 96.05; 97.2; 97.35; 94.16; 92.86; 98.29; 93.0; 92.0; 85.0; 90.0; 94.0; 91.0; 94.36; 92.26; 93.75; 95.82; 93.38; 97.14; 97.0]
+  - n_graduates: nulls=16/37, distinct=18, numeric min=32 max=2217 | values=[239.0; 527.0; 436.0; 318.0; 64.0; 82.0; 181.0; 510.0; 50.0; 33.0; 112.0; 58.0; 32.0; 616.0; 2217.0; 1486.0; 317.0; 298.0]
+  - n_responses: nulls=29/37, distinct=8, numeric min=57 max=2114 | values=[233.0; 497.0; 425.0; 314.0; 57.0; 76.0; 150.0; 2114.0]
+  - note: nulls=24/37, distinct=7 | values=[Toàn ngành 7480101; Trang tổng hợp; Năm suy luận; Khóa không nêu rõ; Tỷ lệ theo lĩnh vực; Công bố 02/07/2026; Tuyên bố theo nhóm ngành]
+  - source_url: nulls=0/37, distinct=10 | values=[https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-2024.pdf; https://thidaihoc.vn/ty-le-sinh-vien-ra-truong-co-viec-lam-cua-truong-dai-hoc-bach-khoa-ha-noi-nam-2023/; https://soha.vn/so-ke-ty-le-sinh-vien-ra-truong-co-viec-lam-giua-ngoai-thuong-va-kinh-te-quoc-dan-truong-nao-thang-the-20230320071119233.htm; https://kenh14.vn/7-nganh-hoc-100-sinh-vien-tot-nghiep-co-viec-lam-tai-dh-kinh-te-quoc-dan-nhieu-nganh-hot-9-diem-mon-chua-chac-do-215250814225037915.chn; https://giaoduc.net.vn/4-dh-co-the-manh-dao-tao-kinh-te-truong-nao-ti-le-sv-co-viec-lam-cao-nhat-post240595.gd; https://cdn.thuvienphapluat.vn/uploads/Hoidapphapluat/2024/TTTT/240610/de-an-ts-dh-y-HN.pdf; https://cdn.lawnet.vn/uploads/giao-duc/LDK/de-an-tuyen-sinh-dh-cong-nghiep-ha-noi-2024.pdf; https://tlu.edu.vn/day-la-nhung-nganh-co-ty-le-100-sinh-vien-tot-nghiep-co-viec-lam-diem-chuan-dao-dong-17-21-diem-55516/; https://vnua.edu.vn/tin-tuc-su-kien/viec-lam/tren-97-sinh-vien-hoc-vien-nong-nghiep-viet-nam-co-viec-lam-sau-khi-tot-nghiep-56821; https://vnua.edu.vn/tin-tuc-su-kien/viec-lam/97-sinh-vien-hoc-vien-nong-nghiep-viet-nam-co-viec-lam-sau-khi-tot-nghiep-58148]
+  - source_type: nulls=0/37, distinct=4 | values=[Chính thức (bản lưu); Trang tổng hợp; Báo chí; Chính thức]
+  - survey_date: nulls=8/37, distinct=5 | values=[2024-12-31; 2023-12-31; 2022-12-31; 2026-12-31; 2025-12-31]
+  - granularity: nulls=0/37, distinct=3 | values=[Ngành; Lĩnh vực; Toàn trường]
+
+==================== TABLE: labor_demand  (data_rows=22) ====================
+HEADER: demand_id | industry_group | period_end_year | metric | value | unit | source_name | source_url | note | period_end_date
+SAMPLES:
+  DEM001 | Toàn thị trường | 2025.0 | Tăng số việc làm so với 2024 | 2.05 | % | JobOKO 2026 | https://vn.joboko.com/blog/ra-mat-bao-cao-luong-tuyen-dung-2026-nwi5698 |  | 2025-12-31
+  DEM002 | CNTT | 2025.0 | Thiếu hụt nhân lực mỗi năm (2023–2025) | 175000.0 | người/năm | TopDev 2023 | https://vneconomy.vn/viet-nam-co-the-thieu-tu-150-000-200-000-nhan-su-cong-nghe-thong-tin-moi-nam.htm | 150–200 nghìn – trung điểm | 2025-12-31
+  DEM003 | CNTT | 2025.0 | Tỷ lệ DN ưu tiên tuyển | 12.2 | % | TopCV 2024-2025 | https://vneconomy.vn/mot-so-nganh-nghe-se-khat-nhan-luc-trong-nam-2025.htm |  | 2025-12-31
+COLUMN PROFILE:
+  - demand_id: nulls=0/22, distinct=22 | values=[DEM001; DEM002; DEM003; DEM004; DEM005; DEM006; DEM007; DEM008; DEM009; DEM010; DEM011; DEM012; DEM013; DEM014; DEM015; DEM016; DEM017; DEM018; DEM019; DEM020; DEM021; DEM022]
+  - industry_group: nulls=0/22, distinct=15 | values=[Toàn thị trường; CNTT; Tự động hóa - Điện - Điện tử; Ô tô - Cơ khí; Kỹ thuật hóa học - Sinh học; Nông nghiệp - Thú y - Thực phẩm; Y khoa; Điều dưỡng - KTYH - YTCC - Dinh dưỡng; Sư phạm; Marketing; Quản trị kinh doanh; Kinh tế quốc tế - Logistics; Tài chính - Ngân hàng; Kế toán; Khoa học dữ liệu - HTTTQL]
+  - period_end_year: nulls=0/22, distinct=4, numeric min=2024 max=2030 | values=[2025.0; 2026.0; 2030.0; 2024.0]
+  - metric: nulls=0/22, distinct=19 | values=[Tăng số việc làm so với 2024; Thiếu hụt nhân lực mỗi năm (2023–2025); Tỷ lệ DN ưu tiên tuyển; Tỷ trọng nhu cầu tuyển dụng; Mục tiêu đào tạo nhân lực bán dẫn ĐH+; Tỷ trọng nhu cầu lao động TP.HCM (điện tử); Tỷ trọng nhu cầu lao động TP.HCM (cơ khí); Tỷ lệ DN sản xuất tăng tuyển; Tỷ trọng nhu cầu lao động TP.HCM (hóa chất–cao su–nhựa); Tỷ trọng nhu cầu lao động TP.HCM (chế biến thực phẩm); Nhu cầu bác sĩ giai đoạn 2021–2030; Nhu cầu điều dưỡng 2021–2030; Thiếu giáo viên so với định mức; Tỷ lệ DN ưu tiên tuyển (kinh doanh/bán hàng); Tỷ trọng nhu cầu tuyển dụng (kinh doanh/bán hàng); Thiếu hụt nhân lực logistics; Tăng trưởng ngành logistics; Tỷ lệ vị trí có rủi ro bị AI thay thế (tài chính–kế toán); Tỷ lệ DN AI gặp khó khi tuyển]
+  - value: nulls=0/22, distinct=21, numeric min=1.99 max=313900 | values=[2.05; 175000.0; 12.2; 8.64; 50000.0; 3.09; 6.79; 68.0; 1.99; 3.73; 173400.0; 313900.0; 110930.0; 9.3; 8.22; 47.6; 47.5; 200000.0; 15.0; 14.97; 45.0]
+  - unit: nulls=0/22, distinct=5 | values=[%; người/năm; người; giáo viên; %/năm]
+  - source_name: nulls=0/22, distinct=10 | values=[JobOKO 2026; TopDev 2023; TopCV 2024-2025; TopCV 2025-2026; QĐ 1017/QĐ-TTg; Falmi TP.HCM; TopCV 2025-2026 (trích quy hoạch ngành y); Bộ GD&ĐT (Tiền Phong 27/6/2026); TopCV; Tổng cục GDNN – Bộ LĐTBXH]
+  - source_url: nulls=0/22, distinct=9 | values=[https://vn.joboko.com/blog/ra-mat-bao-cao-luong-tuyen-dung-2026-nwi5698; https://vneconomy.vn/viet-nam-co-the-thieu-tu-150-000-200-000-nhan-su-cong-nghe-thong-tin-moi-nam.htm; https://vneconomy.vn/mot-so-nganh-nghe-se-khat-nhan-luc-trong-nam-2025.htm; https://vietbao.vn/cong-nghe-thong-tin-van-la-vua-cua-moi-nghe-578220.html; https://vneconomy.vn/dao-tao-it-nhat-50-000-nhan-luc-co-trinh-do-tu-dai-hoc-tro-len-cho-cong-nghiep-ban-dan.htm; https://doanhnghiephoinhap.vn/tp-ho-chi-minh-can-153500-161500-cho-lam-viec-trong-nua-cuoi-nam-40958.html; https://www.topcv.vn/thi-truong-tuyen-dung-2026-nganh-nao-len-nganh-nao-chung; https://tienphong.vn/ca-nuoc-hien-con-thieu-hon-110-nghin-bien-che-giao-vien-post1854732.tpo; https://tuyensinhso.vn/ban-tin/tu-nay-den-nam-2030-viet-nam-thieu-hon-200000-nhan-luc-logistics-c322777.html]
+  - note: nulls=14/22, distinct=8 | values=[150–200 nghìn – trung điểm; Navigos: 13%; Mục tiêu chính sách; 6 tháng cuối 2024; Năm học 2025-2026; 27.51% vị trí có rủi ro bị AI thay thế; 14–16% – trung điểm; Thị trường AI tăng ~20%/năm]
+  - period_end_date: nulls=0/22, distinct=4 | values=[2025-12-31; 2026-12-31; 2030-12-31; 2024-12-31]
+
+==================== TABLE: cutoff_forecast  (data_rows=1826) ====================
+HEADER: forecast_id | program_id | university_code | target_year | forecast_date | method | forecast_cutoff | actual_cutoff | error | abs_error
+SAMPLES:
+  FC0001 | BKA_BF-E12 | BKA | 2025.0 | 2025-06-01 | NAIVE (năm trước) | 22.0 | 21.0 | -1.0 | 1.0
+  FC0002 | BKA_BF-E12 | BKA | 2025.0 | 2025-06-01 | MA2 (TB 2 năm trước) | 22.35 | 21.0 | -1.35 | 1.35
+  FC0003 | BKA_BF-E12 | BKA | 2026.0 | 2026-06-01 | NAIVE (năm trước) | 21.0 | 20.3 | -0.7 | 0.7
+COLUMN PROFILE:
+  - forecast_id: nulls=0/1826, distinct=1826 | sample=[FC0001; FC0002; FC0003; FC0004; FC0005; FC0006; FC0007; FC0008 ...]
+  - program_id: nulls=0/1826, distinct=373 | sample=[BKA_BF-E12; BKA_BF-E19; BKA_BF1; BKA_BF2; BKA_CH-E11; BKA_CH-E20; BKA_CH1; BKA_CH2 ...]
+  - university_code: nulls=0/1826, distinct=7 | values=[BKA; DCN; HVN; KHA; SPH; TLA; YHB]
+  - target_year: nulls=0/1826, distinct=3, numeric min=2025 max=2027 | values=[2025.0; 2026.0; 2027.0]
+  - forecast_date: nulls=0/1826, distinct=3 | values=[2025-06-01; 2026-06-01; 2027-06-01]
+  - method: nulls=0/1826, distinct=2 | values=[NAIVE (năm trước); MA2 (TB 2 năm trước)]
+  - forecast_cutoff: nulls=0/1826, distinct=720, numeric min=16 max=29.54 | sample=[22.0; 22.35; 21.0; 21.5; 20.3; 20.65; 20.0; 20.06 ...]
+  - actual_cutoff: nulls=693/1826, distinct=330, numeric min=16 max=29.54 | sample=[21.0; 20.3; 20.0; 20.06; 23.02; 24.56; 23.38; 24.4 ...]
+  - error: nulls=693/1826, distinct=491, numeric min=-7.22 max=4.5 | sample=[-1.0; -1.35; -0.7; -1.2; -2.0; -1.5; 0.06; -0.94 ...]
+  - abs_error: nulls=693/1826, distinct=341, numeric min=0 max=7.22 | sample=[1.0; 1.35; 0.7; 1.2; 2.0; 1.5; 0.06; 0.94 ...]
+
+==================== TABLE: main_dataset  (data_rows=3096) ====================
+HEADER: application_id | student_id | cohort_year | registration_date | result_date | nv_order | program_id | university_code | major_code | major_name | khoi_nganh | industry_group | ref_cutoff_30 | n_methods_evaluated | n_methods_eligible | best_method | best_margin_30 | is_eligible | is_admitted | gender | priority_area | high_school_type | subject_track | interest_industry | holland_code | program_holland_code | holland_match_pct | n_test_types | family_budget_vnd_year | duration_years | first_year_tuition_vnd | tuition_is_imputed | living_support_vnd_year | est_total_cost_vnd | affordability_index_pct | scholarship_eligibility_score | candidate_type | exam_status | is_thpt_graduated | score_eligible | not_admitted_reason | combo_is_assumed
+SAMPLES:
+  APP00001 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 1.0 | DCN_7480103 | DCN | 7480103 | Kỹ thuật phần mềm | V | CNTT | 25.32 | 1.0 | 0.0 | THPT | -0.61 | False | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | IRC | 100.0 | 2.0 | 65000000.0 | 4.0 | 20000000.0 | False | 0.0 | 308820000.0 | 118.8 |  | Học sinh lớp 12 (đương niên) | Dự thi đầy đủ | True | False | Không đủ điểm | False
+  APP00002 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 2.0 | DCN_7510205 | DCN | 7510205 | Công nghệ kỹ thuật ô tô | V | Ô tô - Cơ khí | 25.14 | 1.0 | 0.0 | THPT | -0.33 | False | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | RIC | 100.0 | 2.0 | 65000000.0 | 4.0 | 20000000.0 | False | 0.0 | 308820000.0 | 118.8 |  | Học sinh lớp 12 (đương niên) | Dự thi đầy đủ | True | False | Không đủ điểm | False
+  APP00003 | HS2023001 | 2023.0 | 2023-07-15 | 2023-08-22 | 3.0 | YHB_7720115 | YHB | 7720115 | Y học cổ truyền | VI | Răng hàm mặt - Y học cổ truyền | 24.94 | 1.0 | 0.0 | THPT | -0.84 | False | False | Nữ | KV2-NT | Công lập | A | Ô tô - Cơ khí | RIC | ISR | 75.0 | 2.0 | 65000000.0 | 6.0 | 55200000.0 | False | 0.0 | 749902000.0 | 192.3 |  | Học sinh lớp 12 (đương niên) | Dự thi đầy đủ | True | False | Không đủ điểm | False
+COLUMN PROFILE:
+  - application_id: nulls=0/3096, distinct=3096 | sample=[APP00001; APP00002; APP00003; APP00004; APP00005; APP00006; APP00007; APP00008 ...]
+  - student_id: nulls=0/3096, distinct=500 | sample=[HS2023001; HS2023002; HS2023003; HS2023004; HS2023005; HS2023006; HS2023007; HS2023008 ...]
+  - cohort_year: nulls=0/3096, distinct=4, numeric min=2023 max=2026 | values=[2023.0; 2024.0; 2025.0; 2026.0]
+  - registration_date: nulls=0/3096, distinct=61 | sample=[2023-07-15; 2023-07-13; 2023-07-18; 2023-07-20; 2023-07-21; 2023-07-12; 2023-07-28; 2023-07-14 ...]
+  - result_date: nulls=0/3096, distinct=9 | values=[2023-08-22; 2024-08-17; 2025-08-22; 2026-08-09; 2026-08-12; 2026-08-10; 2023-08-20; 2024-08-20; 2026-08-20]
+  - nv_order: nulls=0/3096, distinct=10, numeric min=1 max=10 | values=[1.0; 2.0; 3.0; 4.0; 5.0; 6.0; 7.0; 8.0; 9.0; 10.0]
+  - program_id: nulls=0/3096, distinct=380 | sample=[DCN_7480103; DCN_7510205; YHB_7720115; YHB_7720301; BKA_BF1; DCN_7510301; YHB_7720401; SPH_7480201 ...]
+  - university_code: nulls=0/3096, distinct=7 | values=[DCN; YHB; BKA; SPH; HVN; KHA; TLA]
+  - major_code: nulls=750/3096, distinct=147, numeric min=7.1401e+06 max=7.8501e+06 | sample=[7480103; 7510205; 7720115; 7720301; 7420202; 7510301; 7720401; 7480201 ...]
+  - major_name: nulls=0/3096, distinct=325 | sample=[Kỹ thuật phần mềm; Công nghệ kỹ thuật ô tô; Y học cổ truyền; Điều dưỡng (CT tiên tiến); Kỹ thuật sinh học; Công nghệ kỹ thuật điện, điện tử; Dinh dưỡng; Công nghệ thông tin ...]
+  - khoi_nganh: nulls=0/3096, distinct=7 | values=[V; VI; I; III; VII; IV; II]
+  - industry_group: nulls=0/3096, distinct=23 | values=[CNTT; Ô tô - Cơ khí; Răng hàm mặt - Y học cổ truyền; Điều dưỡng - KTYH - YTCC - Dinh dưỡng; Kỹ thuật hóa học - Sinh học; Tự động hóa - Điện - Điện tử; Sư phạm; Luật; Kế toán; Ngoại ngữ - Biên phiên dịch; Kinh tế quốc tế - Logistics; Tài chính - Ngân hàng; Marketing; Y khoa; Du lịch - Khách sạn; Tâm lý học; Xây dựng - Tài nguyên nước - Môi trường; Quản trị kinh doanh; Nông nghiệp - Thú y - Thực phẩm; Khoa học dữ liệu - HTTTQL; Nhân văn - Khoa học xã hội; Nghệ thuật - Thiết kế; Khác]
+  - ref_cutoff_30: nulls=0/3096, distinct=745, numeric min=15.7 max=29.42 | sample=[25.32; 25.14; 24.94; 24.83; 24.65; 24.41; 23.77; 22.63 ...]
+  - n_methods_evaluated: nulls=0/3096, distinct=6, numeric min=0 max=5 | values=[1.0; 2.0; 3.0; 4.0; 5.0; 0.0]
+  - n_methods_eligible: nulls=0/3096, distinct=5, numeric min=0 max=4 | values=[0.0; 1.0; 2.0; 3.0; 4.0]
+  - best_method: nulls=33/3096, distinct=11 | values=[THPT; TSA; KET_HOP_CCNN; HOC_BA; XTTH; QUY_DOI_CHUNG; QUY_DOI_CHUNG(HSA); QUY_DOI_CHUNG(TSA); HSA; SPT; TUYEN_THANG]
+  - best_margin_30: nulls=33/3096, distinct=998, numeric min=-9.82 max=14 | sample=[-0.61; -0.33; -0.84; -0.07; 0.31; 0.12; 0.74; 0.37 ...]
+  - is_eligible: nulls=0/3096, distinct=2 | values=[False; True]
+  - is_admitted: nulls=0/3096, distinct=2 | values=[False; True]
+  - gender: nulls=0/3096, distinct=2 | values=[Nữ; Nam]
+  - priority_area: nulls=0/3096, distinct=4 | values=[KV2-NT; KV3; KV2; KV1]
+  - high_school_type: nulls=0/3096, distinct=3 | values=[Công lập; Tư thục; Chuyên]
+  - subject_track: nulls=0/3096, distinct=4 | values=[A; D; B; C]
+  - interest_industry: nulls=0/3096, distinct=23 | values=[Ô tô - Cơ khí; Marketing; Kinh tế quốc tế - Logistics; Răng hàm mặt - Y học cổ truyền; Luật; Khoa học dữ liệu - HTTTQL; Du lịch - Khách sạn; Xây dựng - Tài nguyên nước - Môi trường; Y khoa; Tự động hóa - Điện - Điện tử; Tâm lý học; Tài chính - Ngân hàng; Sư phạm; Điều dưỡng - KTYH - YTCC - Dinh dưỡng; Quản trị kinh doanh; Kế toán; CNTT; Ngoại ngữ - Biên phiên dịch; Kỹ thuật hóa học - Sinh học; Nông nghiệp - Thú y - Thực phẩm; Nhân văn - Khoa học xã hội; Nghệ thuật - Thiết kế; Khác]
+  - holland_code: nulls=0/3096, distinct=89 | sample=[RIC; AES; ICE; SRI; ISA; ICR; ESI; ESC ...]
+  - program_holland_code: nulls=0/3096, distinct=26 | values=[IRC; RIC; ISR; SIR; IRS; ISC; SAE; ESI; CIE; AES; ECI; CEI; EAS; RIE; SIC; ESC; SIA; ESA; SIE; ASE; ECR; RIS; SAI; ICE; AER; SEC]
+  - holland_match_pct: nulls=0/3096, distinct=11, numeric min=0 max=100 | values=[100.0; 75.0; 66.7; 83.3; 58.3; 25.0; 33.3; 16.7; 50.0; 41.7; 0.0]
+  - n_test_types: nulls=0/3096, distinct=6, numeric min=0 max=5 | values=[2.0; 1.0; 4.0; 3.0; 5.0; 0.0]
+  - family_budget_vnd_year: nulls=0/3096, distinct=165, numeric min=3e+07 max=3.81e+08 | sample=[65000000.0; 141000000.0; 111000000.0; 55000000.0; 115000000.0; 214000000.0; 120000000.0; 234000000.0 ...]
+  - duration_years: nulls=0/3096, distinct=3, numeric min=4 max=6 | values=[4.0; 6.0; 5.0]
+  - first_year_tuition_vnd: nulls=0/3096, distinct=53, numeric min=0 max=8e+07 | sample=[20000000.0; 55200000.0; 41800000.0; 26000000.0; 20900000.0; 11364000.0; 18322000.0; 0.0 ...]
+  - tuition_is_imputed: nulls=0/3096, distinct=2 | values=[False; True]
+  - living_support_vnd_year: nulls=0/3096, distinct=2, numeric min=0 max=3.63e+07 | values=[0.0; 36300000.0]
+  - est_total_cost_vnd: nulls=0/3096, distinct=59, numeric min=7.08e+07 max=9.41249e+08 | sample=[308820000.0; 749902000.0; 409994000.0; 336666000.0; 312997000.0; 268739000.0; 301035000.0; 70800000.0 ...]
+  - affordability_index_pct: nulls=0/3096, distinct=976, numeric min=6.3 max=436.4 | sample=[118.8; 192.3; 157.7; 129.5; 120.4; 103.4; 115.8; 12.6 ...]
+  - scholarship_eligibility_score: nulls=2642/3096, distinct=299, numeric min=5.3 max=96.1 | sample=[27.9; 41.6; 58.7; 44.3; 38.9; 6.7; 29.2; 51.1 ...]
+  - candidate_type: nulls=0/3096, distinct=2 | values=[Học sinh lớp 12 (đương niên); Thí sinh tự do]
+  - exam_status: nulls=0/3096, distinct=6 | values=[Dự thi đầy đủ; Miễn thi Ngoại ngữ (chứng chỉ); Bỏ thi 1 bài thi; Có điểm liệt (≤ 1,0); Bỏ thi toàn bộ; Miễn thi toàn bộ – tuyển thẳng]
+  - is_thpt_graduated: nulls=0/3096, distinct=2 | values=[True; False]
+  - score_eligible: nulls=0/3096, distinct=2 | values=[False; True]
+  - not_admitted_reason: nulls=454/3096, distinct=9 | values=[Không đủ điểm; Đã trúng tuyển NV ưu tiên cao hơn; Không tốt nghiệp THPT (bỏ thi 1 bài thi); Đủ điểm nhưng không tốt nghiệp THPT (bỏ thi 1 bài thi); Không tốt nghiệp THPT (có điểm liệt (≤ 1,0)); Đủ điểm nhưng không tốt nghiệp THPT (có điểm liệt (≤ 1,0)); Đủ điểm nhưng không tốt nghiệp THPT (bỏ thi toàn bộ); Không tốt nghiệp THPT (bỏ thi toàn bộ); Chưa có điểm chuẩn năm này trong dữ liệu thật]
+  - combo_is_assumed: nulls=0/3096, distinct=2 | values=[False; True]
+
+==================== TABLE: student_outcome  (data_rows=500) ====================
+HEADER: student_id | cohort_year | special_case | exam_status | candidate_type | admitted_nv_order | admitted_program_id | admitted_by_method | n_nv | n_universities_applied | admission_status
+SAMPLES:
+  HS2023001 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 5.0 | BKA_BF1 | TSA | 9.0 | 5.0 | Trúng tuyển
+  HS2023002 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 1.0 | SPH_7140202 | THPT | 5.0 | 4.0 | Trúng tuyển
+  HS2023003 | 2023.0 | NORMAL | Dự thi đầy đủ | Học sinh lớp 12 (đương niên) | 5.0 | SPH_7480201 | THPT | 6.0 | 3.0 | Trúng tuyển
+COLUMN PROFILE:
+  - student_id: nulls=0/500, distinct=500 | sample=[HS2023001; HS2023002; HS2023003; HS2023004; HS2023005; HS2023006; HS2023007; HS2023008 ...]
+  - cohort_year: nulls=0/500, distinct=4, numeric min=2023 max=2026 | values=[2023.0; 2024.0; 2025.0; 2026.0]
+  - special_case: nulls=0/500, distinct=7 | values=[NORMAL; MIEN_THI_NN; TU_DO; MIEN_THI_TOAN_BO; BO_THI_1_MON; DIEM_LIET; BO_THI_TOAN_BO]
+  - exam_status: nulls=0/500, distinct=6 | values=[Dự thi đầy đủ; Miễn thi Ngoại ngữ (chứng chỉ); Miễn thi toàn bộ – tuyển thẳng; Bỏ thi 1 bài thi; Có điểm liệt (≤ 1,0); Bỏ thi toàn bộ]
+  - candidate_type: nulls=0/500, distinct=2 | values=[Học sinh lớp 12 (đương niên); Thí sinh tự do]
+  - admitted_nv_order: nulls=46/500, distinct=9, numeric min=1 max=9 | values=[5.0; 1.0; 2.0; 4.0; 6.0; 3.0; 8.0; 7.0; 9.0]
+  - admitted_program_id: nulls=46/500, distinct=198 | sample=[BKA_BF1; SPH_7140202; SPH_7480201; YHB_7720101; SPH_7310401; HVN_7480201; YHB_7720301; HVN_7340101 ...]
+  - admitted_by_method: nulls=46/500, distinct=10 | values=[TSA; THPT; KET_HOP_CCNN; HOC_BA; QUY_DOI_CHUNG; QUY_DOI_CHUNG(HSA); QUY_DOI_CHUNG(TSA); XTTH; HSA; TUYEN_THANG]
+  - n_nv: nulls=0/500, distinct=9, numeric min=2 max=10 | values=[9.0; 5.0; 6.0; 10.0; 3.0; 4.0; 8.0; 7.0; 2.0]
+  - n_universities_applied: nulls=0/500, distinct=6, numeric min=1 max=6 | values=[5.0; 4.0; 3.0; 2.0; 6.0; 1.0]
+  - admission_status: nulls=0/500, distinct=3 | values=[Trúng tuyển; Không tốt nghiệp THPT – không được xét; Trượt tất cả NV]
