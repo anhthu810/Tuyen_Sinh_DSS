@@ -17,6 +17,14 @@ export const NAV: NavItem[] = [
     description: "7 KPI chủ chốt (K01–K07) trên toàn bộ dữ liệu tuyển sinh 2023–2026.",
   },
   {
+    href: "/tu-van",
+    label: "Tư vấn chọn ngành",
+    icon: "Target",
+    title: "Tư vấn chọn ngành & trường",
+    description:
+      "Nhập điểm (thang 30) → quét toàn bộ ngành, phân loại cơ hội đỗ và gợi ý ngành/trường phù hợp theo sở thích, việc làm, chi phí.",
+  },
+  {
     href: "/nguyen-vong",
     label: "Q1 · Xếp nguyện vọng",
     icon: "ListOrdered",

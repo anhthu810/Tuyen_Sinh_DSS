@@ -12,6 +12,7 @@ import {
   Search,
   ShieldCheck,
   GraduationCap,
+  Target,
   type LucideIcon,
 } from "lucide-react";
 import { NAV } from "@/lib/nav";
@@ -26,6 +27,7 @@ const ICONS: Record<string, LucideIcon> = {
   Sparkles,
   Search,
   ShieldCheck,
+  Target,
 };
 
 export function AppSidebar() {
