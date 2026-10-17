@@ -17,6 +17,14 @@ export const NAV: NavItem[] = [
     description: "7 KPI chủ chốt (K01–K07) trên toàn bộ dữ liệu tuyển sinh 2023–2026.",
   },
   {
+    href: "/tu-van-ai",
+    label: "Tư vấn AI",
+    icon: "Bot",
+    title: "Tư vấn AI chọn ngành",
+    description:
+      "Nhập điểm + mô tả tính cách/sở thích → GLM-5.3 phân tích và gợi ý 3–5 ngành phù hợp nhất kèm lý do.",
+  },
+  {
     href: "/tu-van",
     label: "Tư vấn chọn ngành",
     icon: "Target",

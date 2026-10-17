@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   GraduationCap,
   Target,
+  Bot,
   type LucideIcon,
 } from "lucide-react";
 import { NAV } from "@/lib/nav";
@@ -28,6 +29,7 @@ const ICONS: Record<string, LucideIcon> = {
   Search,
   ShieldCheck,
   Target,
+  Bot,
 };
 
 export function AppSidebar() {
