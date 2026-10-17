@@ -22,7 +22,7 @@ export default function ViecLamPage({ searchParams }: { searchParams: SearchPara
   return (
     <div>
       <PageHeader
-        title="Q3 · Cơ hội việc làm"
+        title="Cơ hội việc làm"
         description="Tỷ lệ việc làm sau 1 năm (K05) và nhu cầu tuyển dụng theo nhóm nghề (K04)."
         badge="Nguồn: fact_employment · fact_labor_demand"
       />

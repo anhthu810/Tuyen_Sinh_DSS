@@ -21,7 +21,7 @@ export default function ChiPhiPage({
   return (
     <div>
       <PageHeader
-        title="Q4 · Chi phí & khả năng chi trả"
+        title="Chi phí & khả năng chi trả"
         description="Ước tính tổng chi phí toàn khóa học (K06) và chỉ số khả năng chi trả (K07) theo ngân sách gia đình — dựa trên học phí thực tế từ Supabase, chi phí sinh hoạt và hỗ trợ theo Nghị định 116 cho ngành sư phạm (giả định từ KPI_Sheet – THAM SỐ)."
         badge="Dữ liệu trực tiếp từ Supabase"
       />

@@ -19,7 +19,7 @@ export default function OverviewPage() {
 
       <p className="mt-6 text-xs text-muted-foreground">
         Lưu ý đơn vị: các KPI tỷ lệ hiển thị dạng phần trăm (K01 = 64,8% nghĩa là 324/500 HS đỗ
-        NV1–NV3). K03 là điểm (thang 30), K06 là VND. K04 tính theo từng nhóm nghề ở màn Q3.
+        NV1–NV3). K03 là điểm (thang 30), K06 là VND. K04 tính theo từng nhóm nghề ở mục Cơ hội việc làm.
       </p>
     </div>
   );

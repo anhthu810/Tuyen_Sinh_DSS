@@ -115,7 +115,7 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
     {
       code: "K01",
       name: "Tỷ lệ đỗ nhóm nguyện vọng mục tiêu (NV1–NV3)",
-      question: "Q1",
+      question: "Nguyện vọng",
       display: pct(k01),
       meaning: "Thấp → danh sách quá mạo hiểm, cần bổ sung NV an toàn.",
       tone: k01 == null ? "neutral" : k01 >= 65 ? "good" : k01 >= 50 ? "warn" : "bad",
@@ -123,7 +123,7 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
     {
       code: "K02",
       name: "Lợi thế từ phương thức xét tuyển phụ",
-      question: "Q1",
+      question: "Nguyện vọng",
       display: pct(k02),
       meaning: "Cao → tận dụng ĐGNL/ĐGTD/học bạ để tăng cơ hội đỗ.",
       tone: k02 == null ? "neutral" : k02 >= 35 ? "good" : "neutral",
@@ -131,7 +131,7 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
     {
       code: "K03",
       name: "Biên độ sai số dự báo điểm chuẩn (MAE, MA2)",
-      question: "Q2",
+      question: "Điểm chuẩn",
       display: k03 == null ? "—" : k03.toFixed(2).replace(".", ",") + " điểm",
       meaning: "Nhỏ → yên tâm chốt NV; lớn → giữ khoảng an toàn rộng hơn.",
       tone: k03 == null ? "neutral" : k03 <= 1.5 ? "good" : k03 <= 2.5 ? "warn" : "bad",
@@ -139,15 +139,15 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
     {
       code: "K04",
       name: "Tốc độ tăng trưởng nhu cầu ngành",
-      question: "Q3",
+      question: "Việc làm",
       display: "Theo ngành",
-      meaning: "Tính theo từng nhóm nghề ở màn Q3 (dữ liệu nhu cầu tuyển dụng).",
+      meaning: "Tính theo từng nhóm nghề ở mục Cơ hội việc làm (dữ liệu nhu cầu tuyển dụng).",
       tone: "neutral",
     },
     {
       code: "K05",
       name: "Tỷ lệ sinh viên có việc làm sau 1 năm",
-      question: "Q3",
+      question: "Việc làm",
       display: pct(k05),
       meaning: "≥ 90% → đầu ra ổn định.",
       tone: k05 == null ? "neutral" : k05 >= 90 ? "good" : k05 >= 80 ? "warn" : "bad",
@@ -155,7 +155,7 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
     {
       code: "K06",
       name: "Tổng chi phí ước tính toàn khóa",
-      question: "Q4",
+      question: "Chi phí",
       display: vnd,
       meaning: "Số tiền gia đình cần chuẩn bị cho toàn khóa (bình quân NV trúng tuyển).",
       tone: "neutral",
@@ -163,7 +163,7 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
     {
       code: "K07",
       name: "Tỷ lệ HS trúng tuyển vượt ngân sách gia đình",
-      question: "Q4",
+      question: "Chi phí",
       display: pct(k07),
       meaning: "> 100% chi phí/ngân sách → cần học bổng, tín dụng, hoặc ngành học phí thấp hơn.",
       tone: k07 == null ? "neutral" : k07 <= 30 ? "good" : k07 <= 50 ? "warn" : "bad",

@@ -19,7 +19,7 @@ export default function SigmaPage({
   return (
     <div>
       <PageHeader
-        title="Σ · Khuyến nghị tổng hợp"
+        title="Khuyến nghị tổng hợp"
         description="Xếp hạng các ngành của học sinh theo 4 trục — phù hợp (Holland), khả năng đỗ, cơ hội việc làm, khả năng chi trả — với trọng số bạn tự điều chỉnh."
         badge="Engine DSS · đa tiêu chí"
       />

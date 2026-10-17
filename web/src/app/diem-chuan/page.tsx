@@ -11,7 +11,7 @@ export default function DiemChuanPage({
   return (
     <div>
       <PageHeader
-        title="Q2 · Dự báo điểm chuẩn"
+        title="Dự báo điểm chuẩn"
         description="So sánh điểm chuẩn thực tế với dự báo theo hai phương pháp NAIVE (năm trước) và MA2 (TB 2 năm trước), kèm dải sai số ±MAE của từng ngành để tham khảo khi chốt nguyện vọng."
         badge="Nguồn: fact_cutoff_forecast"
       />

@@ -39,7 +39,7 @@ export default function Q1Page({
   return (
     <div>
       <PageHeader
-        title="Q1 · Xếp nguyện vọng"
+        title="Xếp nguyện vọng"
         description="Chọn hồ sơ học sinh → phân loại từng nguyện vọng thành Với cao / Vừa sức / Chắc đỗ dựa trên biên điểm (thang 30) và sai số dự báo điểm chuẩn, kèm xác suất đỗ và thứ tự NV khuyến nghị."
         badge="Engine DSS · reach / match / safety"
       />
@@ -200,11 +200,11 @@ async function Q1Content({
       <p className="text-xs text-muted-foreground">
         Xem độ tin cậy dự báo từng ngành ở{" "}
         <Link href="/diem-chuan" className="underline">
-          Q2 · Dự báo điểm chuẩn
+          Dự báo điểm chuẩn
         </Link>
         , chi phí ở{" "}
         <Link href="/chi-phi" className="underline">
-          Q4 · Chi phí
+          Chi phí
         </Link>
         .
       </p>
