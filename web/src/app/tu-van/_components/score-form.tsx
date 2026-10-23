@@ -10,15 +10,22 @@ import { tsaTo30, hsaTo30 } from "@/lib/dss/scale";
 export function ScoreForm({
   industries,
   universities,
+  subjectCombinations,
   initial,
 }: {
   industries: string[];
-  universities: { university_code: string; short_name: string | null; university_name: string }[];
+  universities: {
+    university_code: string;
+    short_name: string | null;
+    university_name: string;
+  }[];
+  subjectCombinations: string[];
   initial: {
     score?: string;
     holland?: string;
     industry?: string;
     university?: string;
+    combination?: string;
     budget?: string;
   };
 }) {
@@ -27,6 +34,7 @@ export function ScoreForm({
   const [holland, setHolland] = useState(initial.holland ?? "");
   const [industry, setIndustry] = useState(initial.industry ?? "");
   const [university, setUniversity] = useState(initial.university ?? "");
+  const [combination, setCombination] = useState(initial.combination ?? "");
   const [budget, setBudget] = useState(initial.budget ?? "");
 
   // tiện ích quy đổi nhanh TSA/HSA → thang 30
@@ -40,19 +48,26 @@ export function ScoreForm({
     if (holland) p.set("holland", holland);
     if (industry) p.set("industry", industry);
     if (university) p.set("university", university);
+    if (combination) p.set("combination", combination);
     if (budget) p.set("budget", budget);
     router.push(`/tu-van?${p.toString()}`);
   }
 
   const convResult =
     conv && !Number.isNaN(Number(conv))
-      ? (convType === "TSA" ? tsaTo30(Number(conv)) : hsaTo30(Number(conv))).toFixed(2)
+      ? (convType === "TSA"
+          ? tsaTo30(Number(conv))
+          : hsaTo30(Number(conv))
+        ).toFixed(2)
       : null;
 
   return (
     <Card>
       <CardContent className="p-5">
-        <form onSubmit={submit} className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <form
+          onSubmit={submit}
+          className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
+        >
           <div>
             <label className="mb-1 block text-sm font-medium">
               Điểm của bạn (thang 30) <span className="text-danger">*</span>
@@ -71,7 +86,9 @@ export function ScoreForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Mã Holland (tùy chọn)</label>
+            <label className="mb-1 block text-sm font-medium">
+              Mã Holland (tùy chọn)
+            </label>
             <input
               type="text"
               maxLength={3}
@@ -80,11 +97,15 @@ export function ScoreForm({
               placeholder="VD: IRC"
               className="h-10 w-full rounded-lg border bg-card px-3 text-sm uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
-            <p className="mt-1 text-xs text-muted-foreground">3 chữ RIASEC theo sở thích/tính cách.</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              3 chữ RIASEC theo sở thích/tính cách.
+            </p>
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Ngân sách/năm (tùy chọn)</label>
+            <label className="mb-1 block text-sm font-medium">
+              Ngân sách/năm (tùy chọn)
+            </label>
             <input
               type="number"
               min={0}
@@ -97,8 +118,14 @@ export function ScoreForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Nhóm nghề quan tâm (tùy chọn)</label>
-            <Select value={industry} onChange={(e) => setIndustry(e.target.value)} className="w-full">
+            <label className="mb-1 block text-sm font-medium">
+              Nhóm nghề quan tâm (tùy chọn)
+            </label>
+            <Select
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
+              className="w-full"
+            >
               <option value="">Tất cả nhóm nghề</option>
               {industries.map((g) => (
                 <option key={g} value={g}>
@@ -109,12 +136,36 @@ export function ScoreForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">Trường (tùy chọn)</label>
-            <Select value={university} onChange={(e) => setUniversity(e.target.value)} className="w-full">
+            <label className="mb-1 block text-sm font-medium">
+              Trường (tùy chọn)
+            </label>
+            <Select
+              value={university}
+              onChange={(e) => setUniversity(e.target.value)}
+              className="w-full"
+            >
               <option value="">Tất cả trường</option>
               {universities.map((u) => (
                 <option key={u.university_code} value={u.university_code}>
                   {u.short_name ?? u.university_code} — {u.university_name}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium">
+              Tổ hợp xét tuyển (tùy chọn)
+            </label>
+            <Select
+              value={combination}
+              onChange={(e) => setCombination(e.target.value)}
+              className="w-full"
+            >
+              <option value="">Tất cả tổ hợp</option>
+              {subjectCombinations.map((item) => (
+                <option key={item} value={item}>
+                  {item}
                 </option>
               ))}
             </Select>

@@ -5,6 +5,7 @@ export type AiProfile = {
   score30: number;
   personality?: string; // mô tả tính cách / sở thích / thế mạnh (chữ tự do)
   hollandCode?: string;
+  subjectCombination?: string;
   budgetVndYear?: number;
 };
 
@@ -22,6 +23,7 @@ export type AiRecommendation = {
     employmentRate: number | null;
     estTotalCost: number | null;
     refCutoff30: number;
+    subjectCombinations: string[];
   };
 };
 
@@ -76,6 +78,7 @@ export async function aiAdvise(profile: AiProfile): Promise<AiAdviceResult> {
   const all = await adviseFromScore({
     score30: profile.score30,
     hollandCode: profile.hollandCode,
+    subjectCombination: profile.subjectCombination,
     budgetVndYear: profile.budgetVndYear,
   });
   const shortlist = all.slice(0, 28);
@@ -90,6 +93,7 @@ export async function aiAdvise(profile: AiProfile): Promise<AiAdviceResult> {
           employmentRate: d.employmentRate,
           estTotalCost: d.estTotalCost,
           refCutoff30: d.refCutoff30,
+          subjectCombinations: d.subjectCombinations,
         }
       : undefined;
   };

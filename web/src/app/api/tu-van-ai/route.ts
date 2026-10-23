@@ -13,6 +13,10 @@ export async function POST(req: Request) {
       score30: score,
       personality: typeof body?.personality === "string" ? body.personality : undefined,
       hollandCode: typeof body?.holland === "string" && body.holland ? body.holland.toUpperCase() : undefined,
+      subjectCombination:
+        typeof body?.subjectCombination === "string" && /^[A-Z]\d{2}$/i.test(body.subjectCombination)
+          ? body.subjectCombination.toUpperCase()
+          : undefined,
       budgetVndYear: body?.budget ? Number(body.budget) : undefined,
     });
     return Response.json(result);

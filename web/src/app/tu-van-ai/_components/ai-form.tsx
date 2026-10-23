@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
 import { Loader2, Sparkles, GraduationCap } from "lucide-react";
 import { formatVndShort } from "@/lib/format";
 
@@ -21,6 +22,7 @@ type Rec = {
     employmentRate: number | null;
     estTotalCost: number | null;
     refCutoff30: number;
+    subjectCombinations: string[];
   };
 };
 type Result = {
@@ -38,11 +40,12 @@ const BUCKET: Record<string, { label: string; tone: "danger" | "warning" | "succ
   safety: { label: "Chắc đỗ", tone: "success" },
 };
 
-export function AiAdvisorForm() {
+export function AiAdvisorForm({ subjectCombinations }: { subjectCombinations: string[] }) {
   const [score, setScore] = useState("");
   const [personality, setPersonality] = useState("");
   const [holland, setHolland] = useState("");
   const [budget, setBudget] = useState("");
+  const [combination, setCombination] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [err, setErr] = useState("");
@@ -56,7 +59,7 @@ export function AiAdvisorForm() {
       const res = await fetch("/api/tu-van-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ score, personality, holland, budget }),
+        body: JSON.stringify({ score, personality, holland, budget, subjectCombination: combination }),
       });
       const json: Result = await res.json();
       if (json.error) setErr(json.error);
@@ -102,6 +105,15 @@ export function AiAdvisorForm() {
                   placeholder="VD: 100000000"
                   className="h-10 w-full rounded-lg border bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium">Tổ hợp xét tuyển (tùy chọn)</label>
+                <Select value={combination} onChange={(e) => setCombination(e.target.value)} className="w-full">
+                  <option value="">Tất cả tổ hợp</option>
+                  {subjectCombinations.map((item) => (
+                    <option key={item} value={item}>{item}</option>
+                  ))}
+                </Select>
               </div>
             </div>
             <div>
@@ -169,6 +181,11 @@ export function AiAdvisorForm() {
                       {r.major_name}
                     </div>
                     <div className="text-xs text-muted-foreground">{r.university}</div>
+                    {r.data?.subjectCombinations.length ? (
+                      <div className="text-xs text-muted-foreground">
+                        Tổ hợp: {r.data.subjectCombinations.join(", ")}
+                      </div>
+                    ) : null}
                     {r.data ? (
                       <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
                         <span>P(đỗ) ~{Math.round(r.data.admitProb * 100)}%</span>
