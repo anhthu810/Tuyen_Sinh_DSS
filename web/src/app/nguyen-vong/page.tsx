@@ -19,6 +19,7 @@ import {
   type Bucket,
 } from "@/lib/dss/recommend";
 import { StudentPicker } from "./_components/student-picker";
+import { TrialPlanner } from "./_components/trial-planner";
 
 const K01_BASELINE = 64.8; // % — tỷ lệ đỗ NV1–3 toàn hệ (tham chiếu)
 
@@ -34,13 +35,21 @@ function fmtProb(p: number | null) {
 export default function Q1Page({
   searchParams,
 }: {
-  searchParams: Promise<{ student?: string }>;
+  searchParams: Promise<{
+    student?: string;
+    mode?: string;
+    score?: string;
+    holland?: string;
+    combination?: string;
+    budget?: string;
+    count?: string;
+  }>;
 }) {
   return (
     <div>
       <PageHeader
         title="Xếp nguyện vọng"
-        description="Chọn hồ sơ học sinh → phân loại từng nguyện vọng thành Với cao / Vừa sức / Chắc đỗ dựa trên biên điểm (thang 30) và sai số dự báo điểm chuẩn, kèm xác suất đỗ và thứ tự NV khuyến nghị."
+        description="Chọn hồ sơ có sẵn hoặc nhập hồ sơ thử → phân loại nguyện vọng thành Với cao / Vừa sức / Chắc đỗ dựa trên điểm và sai số dự báo, kèm xác suất đỗ và thứ tự gợi ý."
         badge="Engine DSS · reach / match / safety"
       />
       <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
@@ -58,12 +67,39 @@ export default function Q1Page({
 async function Q1Content({
   searchParams,
 }: {
-  searchParams: Promise<{ student?: string }>;
+  searchParams: Promise<{
+    student?: string;
+    mode?: string;
+    score?: string;
+    holland?: string;
+    combination?: string;
+    budget?: string;
+    count?: string;
+  }>;
 }) {
   const sp = await searchParams;
+  if (sp.mode === "trial") {
+    return <TrialPlanner searchParams={sp} />;
+  }
+
   const options = await getStudentOptions();
   if (!options.length) {
-    return <EmptyState title="Chưa có hồ sơ học sinh" description="Không đọc được dim_student." />;
+    return (
+      <div className="space-y-4">
+        <EmptyState
+          title="Chưa có hồ sơ học sinh lưu trong hệ thống"
+          description="Bạn vẫn có thể nhập điểm của mình và thử xếp nguyện vọng mà không cần tạo tài khoản hoặc lưu hồ sơ."
+        />
+        <div className="text-center">
+          <Link
+            href="/nguyen-vong?mode=trial"
+            className="inline-flex h-10 items-center rounded-lg bg-primary px-4 text-sm font-medium text-primary-foreground hover:opacity-90"
+          >
+            Thử xếp nguyện vọng với hồ sơ mới
+          </Link>
+        </div>
+      </div>
+    );
   }
   const studentId =
     sp.student && options.some((o) => o.student_id === sp.student)
@@ -105,7 +141,15 @@ async function Q1Content({
 
   return (
     <div className="space-y-4">
-      <StudentPicker options={options} selected={studentId} />
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <StudentPicker options={options} selected={studentId} />
+        <Link
+          href="/nguyen-vong?mode=trial"
+          className="text-sm font-medium text-primary underline"
+        >
+          Thử xếp nguyện vọng với hồ sơ mới
+        </Link>
+      </div>
 
       {/* Thẻ thông tin HS */}
       <Card>

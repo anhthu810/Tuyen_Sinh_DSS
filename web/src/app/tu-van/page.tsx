@@ -7,7 +7,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { getIndustryGroups, getUniversities } from "@/lib/queries/filters";
 import { adviseFromScore } from "@/lib/dss/advise";
-import { BUCKET_LABEL, BUCKET_TONE, type Bucket } from "@/lib/dss/recommend";
+import {
+  admitProbability,
+  BUCKET_LABEL,
+  BUCKET_TONE,
+  classify,
+  type Bucket,
+} from "@/lib/dss/recommend";
+import { IELTS_ADMISSION_BONUSES } from "@/lib/dss/scale";
 import { formatVndShort } from "@/lib/format";
 import { getSubjectCombinationOptions } from "@/lib/queries/signals";
 import { ScoreForm } from "./_components/score-form";
@@ -24,6 +31,35 @@ type SP = Promise<{
 function fmtMargin(m: number) {
   const s = m.toFixed(2).replace(".", ",");
   return m >= 0 ? `+${s}` : s;
+}
+
+function getIeltsSuggestion(
+  item: Awaited<ReturnType<typeof adviseFromScore>>[number],
+  baseScore: number,
+) {
+  if (item.bucket === "safety" || baseScore >= 30) return null;
+
+  const currentBucket = item.bucket;
+  const targetBucket = currentBucket === "reach" ? "match" : "safety";
+  const scenarios = IELTS_ADMISSION_BONUSES.map(({ band, bonus }) => {
+    const adjustedScore = Math.min(30, baseScore + bonus);
+    const adjustedMargin = item.margin + (adjustedScore - baseScore);
+    return {
+      band,
+      bonus: adjustedScore - baseScore,
+      probability: admitProbability(adjustedMargin, item.band),
+      bucket: classify(adjustedMargin, item.band),
+    };
+  });
+  const scenario =
+    scenarios.find((candidate) => candidate.bucket === targetBucket) ??
+    scenarios[scenarios.length - 1];
+
+  if (scenario.bonus <= 0) return null;
+  return {
+    ...scenario,
+    reachedNextBucket: scenario.bucket !== currentBucket,
+  };
 }
 
 export default function TuVanPage({ searchParams }: { searchParams: SP }) {
@@ -180,6 +216,7 @@ async function Results({
                   </th>
                   <th className="py-2 pr-3 text-right font-medium">Biên</th>
                   <th className="py-2 pr-3 text-right font-medium">P(đỗ)</th>
+                  <th className="py-2 pr-3 font-medium">Kịch bản IELTS</th>
                   <th className="py-2 pr-3 text-right font-medium">Phù hợp</th>
                   <th className="py-2 pr-3 text-right font-medium">Việc làm</th>
                   <th className="py-2 pr-3 text-right font-medium">
@@ -189,7 +226,9 @@ async function Results({
                 </tr>
               </thead>
               <tbody>
-                {top.map((it, i) => (
+                {top.map((it, i) => {
+                  const ieltsSuggestion = getIeltsSuggestion(it, score);
+                  return (
                   <tr key={it.programId} className="border-b last:border-0">
                     <td className="py-2 pr-3 text-muted-foreground">{i + 1}</td>
                     <td className="py-2 pr-3">
@@ -227,6 +266,25 @@ async function Results({
                     <td className="py-2 pr-3 text-right tabular-nums">
                       {Math.round(it.admitProb * 100)}%
                     </td>
+                    <td className="min-w-52 py-2 pr-3 text-xs">
+                      {ieltsSuggestion ? (
+                        <>
+                          <div className="font-medium">
+                            IELTS {ieltsSuggestion.band.toFixed(1)}+: +
+                            {ieltsSuggestion.bonus.toFixed(2)}
+                          </div>
+                          <div className="text-muted-foreground">
+                            P(đỗ) {Math.round(it.admitProb * 100)}% →{" "}
+                            {Math.round(ieltsSuggestion.probability * 100)}%
+                            {ieltsSuggestion.reachedNextBucket
+                              ? ` · ${BUCKET_LABEL[ieltsSuggestion.bucket]}`
+                              : ""}
+                          </div>
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
                     <td className="py-2 pr-3 text-right tabular-nums">
                       {it.fit == null ? "—" : Math.round(it.fit)}
                     </td>
@@ -244,10 +302,17 @@ async function Results({
                       {Math.round(it.composite)}
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Kịch bản IELTS chỉ áp dụng cho nhóm Với cao/Vừa sức theo mức điểm cộng
+            giả định và dùng để tham khảo. Mỗi trường/ngành/phương thức có thể có
+            quy định riêng; hãy kiểm tra đề án tuyển sinh chính thức trước khi
+            quyết định thi hoặc đăng ký.
+          </p>
         </CardContent>
       </Card>
     </div>

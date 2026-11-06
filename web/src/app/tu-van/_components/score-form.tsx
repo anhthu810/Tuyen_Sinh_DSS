@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { tsaTo30, hsaTo30 } from "@/lib/dss/scale";
+import { ieltsAdmissionBonus } from "@/lib/dss/scale";
 
 export function ScoreForm({
   industries,
@@ -37,9 +37,7 @@ export function ScoreForm({
   const [combination, setCombination] = useState(initial.combination ?? "");
   const [budget, setBudget] = useState(initial.budget ?? "");
 
-  // tiện ích quy đổi nhanh TSA/HSA → thang 30
-  const [conv, setConv] = useState("");
-  const [convType, setConvType] = useState<"TSA" | "HSA">("TSA");
+  const [ieltsBand, setIeltsBand] = useState("");
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -53,12 +51,19 @@ export function ScoreForm({
     router.push(`/tu-van?${p.toString()}`);
   }
 
-  const convResult =
-    conv && !Number.isNaN(Number(conv))
-      ? (convType === "TSA"
-          ? tsaTo30(Number(conv))
-          : hsaTo30(Number(conv))
-        ).toFixed(2)
+  const ieltsValue = Number(ieltsBand);
+  const validIeltsBand =
+    ieltsBand !== "" &&
+    Number.isFinite(ieltsValue) &&
+    ieltsValue >= 0 &&
+    ieltsValue <= 9;
+  const ieltsBonus = validIeltsBand ? ieltsAdmissionBonus(ieltsValue) : null;
+  const baseScore = Number(score);
+  const validBaseScore =
+    score !== "" && Number.isFinite(baseScore) && baseScore >= 0 && baseScore <= 30;
+  const adjustedScore =
+    validBaseScore && ieltsBonus != null
+      ? Math.min(30, baseScore + ieltsBonus)
       : null;
 
   return (
@@ -86,9 +91,19 @@ export function ScoreForm({
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium">
-              Mã Holland (tùy chọn)
-            </label>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <label className="block text-sm font-medium">
+                Mã Holland (tùy chọn)
+              </label>
+              <a
+                href="https://jobsgo.vn/trac-nghiem-holland.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary underline"
+              >
+                Làm trắc nghiệm
+              </a>
+            </div>
             <input
               type="text"
               maxLength={3}
@@ -98,7 +113,7 @@ export function ScoreForm({
               className="h-10 w-full rounded-lg border bg-card px-3 text-sm uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
             <p className="mt-1 text-xs text-muted-foreground">
-              3 chữ RIASEC theo sở thích/tính cách.
+              Làm trắc nghiệm rồi nhập mã Holland 3 chữ cái (RIASEC) nhận được.
             </p>
           </div>
 
@@ -178,35 +193,48 @@ export function ScoreForm({
           </div>
         </form>
 
-        {/* Quy đổi nhanh TSA/HSA → thang 30 */}
-        <div className="mt-4 flex flex-wrap items-center gap-2 border-t pt-4 text-sm">
-          <span className="text-muted-foreground">Quy đổi nhanh:</span>
-          <Select
-            value={convType}
-            onChange={(e) => setConvType(e.target.value as "TSA" | "HSA")}
-            className="h-9"
-          >
-            <option value="TSA">TSA</option>
-            <option value="HSA">HSA</option>
-          </Select>
-          <input
-            type="number"
-            value={conv}
-            onChange={(e) => setConv(e.target.value)}
-            placeholder="điểm gốc"
-            className="h-9 w-28 rounded-lg border bg-card px-3 text-sm"
-          />
-          <span className="text-muted-foreground">→ thang 30:</span>
-          <span className="font-medium">{convResult ?? "—"}</span>
-          {convResult ? (
-            <button
+        <div className="mt-4 space-y-2 border-t pt-4 text-sm">
+          <div className="flex flex-wrap items-center gap-2">
+            <label htmlFor="quick-ielts-band" className="font-medium">
+              Ước tính điểm cộng IELTS:
+            </label>
+            <input
+              id="quick-ielts-band"
+              type="number"
+              min={0}
+              max={9}
+              step={0.5}
+              value={ieltsBand}
+              onChange={(e) => setIeltsBand(e.target.value)}
+              placeholder="Band 0–9"
+              className="h-9 w-28 rounded-lg border bg-card px-3 text-sm"
+            />
+            <span className="text-muted-foreground">
+              Điểm cộng: <strong className="text-foreground">
+                {ieltsBonus == null ? "—" : `+${ieltsBonus.toFixed(2)}`}
+              </strong>
+            </span>
+            <span className="text-muted-foreground">
+              Điểm sau cộng: <strong className="text-foreground">
+                {adjustedScore == null ? "—" : `${adjustedScore.toFixed(2)}/30`}
+              </strong>
+            </span>
+            <Button
               type="button"
-              className="text-xs text-primary underline"
-              onClick={() => setScore(convResult)}
+              variant="outline"
+              size="sm"
+              disabled={adjustedScore == null || ieltsBonus == null}
+              onClick={() => {
+                if (adjustedScore != null) setScore(adjustedScore.toFixed(2));
+              }}
             >
-              dùng điểm này
-            </button>
-          ) : null}
+              Dùng điểm sau cộng
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Mức điểm cộng theo giả định của hệ thống; điểm tổng không vượt quá 30.
+            Việc quy đổi IELTS thực tế tùy đề án và phương thức tuyển sinh của từng trường.
+          </p>
         </div>
       </CardContent>
     </Card>

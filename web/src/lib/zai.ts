@@ -4,9 +4,15 @@ export type ChatMsg = { role: "system" | "user" | "assistant"; content: string }
 
 export async function glmChat(
   messages: ChatMsg[],
-  opts?: { maxTokens?: number; reasoningEffort?: "low" | "high" | "max"; model?: string; temperature?: number },
+  opts?: {
+    maxTokens?: number;
+    reasoningEffort?: "low" | "high" | "max";
+    model?: string;
+    temperature?: number;
+    apiKey?: string;
+  },
 ): Promise<{ content: string; usage?: unknown }> {
-  const key = process.env.ZAI_API_KEY;
+  const key = opts?.apiKey?.trim() || process.env.ZAI_API_KEY;
   if (!key) throw new Error("ZAI_API_KEY chưa được cấu hình trên server.");
   const res = await fetch("https://api.z.ai/api/coding/paas/v4/chat/completions", {
     method: "POST",
