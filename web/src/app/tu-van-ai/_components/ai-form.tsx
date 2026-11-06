@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
-import { Loader2, Sparkles, GraduationCap } from "lucide-react";
+import { Loader2, Sparkles, GraduationCap, Download, KeyRound, Trash2 } from "lucide-react";
 import { formatVndShort } from "@/lib/format";
 
 type Rec = {
@@ -46,9 +46,62 @@ export function AiAdvisorForm({ subjectCombinations }: { subjectCombinations: st
   const [holland, setHolland] = useState("");
   const [budget, setBudget] = useState("");
   const [combination, setCombination] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [err, setErr] = useState("");
+
+  function saveApiKey() {
+    const next = apiKey.trim();
+    if (!next) {
+      setErr("Vui lòng nhập khóa API hoặc bỏ trống để dùng khóa server mặc định.");
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("dss-ai-api-key", next);
+    }
+    setErr("Đã lưu khóa API AI trên thiết bị này.");
+  }
+
+  function clearApiKey() {
+    setApiKey("");
+    if (typeof window !== "undefined") window.localStorage.removeItem("dss-ai-api-key");
+    setErr("Đã xóa khóa API cá nhân khỏi thiết bị.");
+  }
+
+  function exportCsv() {
+    if (!result?.recommendations?.length) {
+      setErr("Chưa có dữ liệu để xuất.");
+      return;
+    }
+    const rows = [
+      ["program_id", "major_name", "university", "bucket", "admitProb", "employmentRate", "estTotalCost", "why_fit", "career_outlook", "admit_note"],
+      ...result.recommendations.map((r) => [
+        r.program_id,
+        r.major_name,
+        r.university,
+        r.data?.bucket ?? "",
+        r.data?.admitProb ?? "",
+        r.data?.employmentRate ?? "",
+        r.data?.estTotalCost ?? "",
+        r.why_fit,
+        r.career_outlook,
+        r.admit_note,
+      ]),
+    ];
+    const csv = rows
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "dss-ai-recommendations.csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,10 +109,22 @@ export function AiAdvisorForm({ subjectCombinations }: { subjectCombinations: st
     setResult(null);
     setLoading(true);
     try {
+      const payload = {
+        score,
+        personality,
+        holland,
+        budget,
+        subjectCombination: combination,
+        apiKey:
+          apiKey.trim() ||
+          (typeof window !== "undefined"
+            ? window.localStorage.getItem("dss-ai-api-key") || undefined
+            : undefined),
+      };
       const res = await fetch("/api/tu-van-ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ score, personality, holland, budget, subjectCombination: combination }),
+        body: JSON.stringify(payload),
       });
       const json: Result = await res.json();
       if (json.error) setErr(json.error);
@@ -73,6 +138,33 @@ export function AiAdvisorForm({ subjectCombinations }: { subjectCombinations: st
 
   return (
     <div className="space-y-4">
+      <Card>
+        <CardContent className="p-5">
+          <div className="mb-4 flex flex-col gap-3 rounded-lg border bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <KeyRound className="size-4 text-primary" />
+              Khóa API AI cá nhân (tuỳ chọn)
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="Nhập API key của bạn"
+                className="h-10 min-w-[220px] rounded-lg border bg-card px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <Button type="button" variant="outline" size="sm" onClick={saveApiKey}>Lưu</Button>
+              <Button type="button" variant="ghost" size="sm" onClick={clearApiKey} className="gap-2">
+                <Trash2 className="size-3" /> Xóa
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Khóa lưu trên thiết bị sẽ được dùng khi gửi yêu cầu tư vấn; nếu để trống, hệ thống dùng khóa server.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardContent className="p-5">
           <form onSubmit={submit} className="space-y-4">
@@ -89,13 +181,26 @@ export function AiAdvisorForm({ subjectCombinations }: { subjectCombinations: st
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium">Mã Holland (tùy chọn)</label>
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <label className="block text-sm font-medium">Mã Holland (tùy chọn)</label>
+                  <a
+                    href="https://jobsgo.vn/trac-nghiem-holland.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-primary underline"
+                  >
+                    Làm trắc nghiệm
+                  </a>
+                </div>
                 <input
                   type="text" maxLength={3} value={holland}
                   onChange={(e) => setHolland(e.target.value.toUpperCase())}
                   placeholder="VD: IRC"
                   className="h-10 w-full rounded-lg border bg-card px-3 text-sm uppercase focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Làm trắc nghiệm rồi nhập mã Holland 3 chữ cái (RIASEC) nhận được.
+                </p>
               </div>
               <div>
                 <label className="mb-1 block text-sm font-medium">Ngân sách/năm (tùy chọn)</label>
@@ -151,10 +256,15 @@ export function AiAdvisorForm({ subjectCombinations }: { subjectCombinations: st
         <div className="space-y-4">
           <Card>
             <CardContent className="p-5">
-              <div className="mb-2 flex items-center gap-2">
-                <Badge tone={result.source === "ai" ? "default" : "warning"}>
-                  {result.source === "ai" ? "Phân tích bởi GLM-5.3" : "Gợi ý theo thuật toán"}
-                </Badge>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Badge tone={result.source === "ai" ? "default" : "warning"}>
+                    {result.source === "ai" ? "Phân tích bởi GLM-5.3" : "Gợi ý theo thuật toán"}
+                  </Badge>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={exportCsv} className="gap-2">
+                  <Download className="size-3" /> Xuất CSV
+                </Button>
               </div>
               {result.note ? (
                 <p className="mb-2 text-xs text-muted-foreground">{result.note}</p>

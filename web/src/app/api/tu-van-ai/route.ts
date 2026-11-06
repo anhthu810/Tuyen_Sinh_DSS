@@ -6,6 +6,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => ({}));
     const score = Number(body?.score);
+    const apiKey = typeof body?.apiKey === "string" ? body.apiKey.trim() : "";
     if (!Number.isFinite(score) || score < 0 || score > 30) {
       return Response.json({ error: "Điểm thang 30 không hợp lệ (0–30)." }, { status: 400 });
     }
@@ -18,6 +19,7 @@ export async function POST(req: Request) {
           ? body.subjectCombination.toUpperCase()
           : undefined,
       budgetVndYear: body?.budget ? Number(body.budget) : undefined,
+      apiKey: apiKey || undefined,
     });
     return Response.json(result);
   } catch (e) {

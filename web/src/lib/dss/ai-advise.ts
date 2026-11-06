@@ -7,6 +7,7 @@ export type AiProfile = {
   hollandCode?: string;
   subjectCombination?: string;
   budgetVndYear?: number;
+  apiKey?: string;
 };
 
 export type AiRecommendation = {
@@ -125,7 +126,7 @@ export async function aiAdvise(profile: AiProfile): Promise<AiAdviceResult> {
         { role: "system", content: SYSTEM },
         { role: "user", content: buildUserPrompt(profile, shortlist) },
       ],
-      { maxTokens: 3500, reasoningEffort: "high", temperature: 0.4 },
+      { maxTokens: 3500, reasoningEffort: "high", temperature: 0.4, apiKey: profile.apiKey },
     );
     const parsed = extractJson<{
       overall_analysis?: string;
