@@ -52,9 +52,15 @@ export function ConfidenceCard({
     </table>
   );
 
+  const highConf = cutoffConfidence["Cao"] ?? 0;
+  const confidenceTitle =
+    total > 0
+      ? `${pct(highConf)} dữ liệu điểm chuẩn (${highConf.toLocaleString("vi-VN")}/${total.toLocaleString("vi-VN")} dòng) đạt độ tin cậy Cao; ${cutoffScaleUnconfirmed.toLocaleString("vi-VN")} dòng chưa xác nhận thang điểm`
+      : "Chưa ghi nhận bản ghi độ tin cậy trong fact_cutoff_score (kiểm tra phạm vi dữ liệu đồng bộ)";
+
   return (
     <ChartCard
-      title="Độ tin cậy điểm chuẩn"
+      title={confidenceTitle}
       description="Phân phối nhãn độ tin cậy trên toàn bộ dòng fact_cutoff_score."
       table={table}
     >

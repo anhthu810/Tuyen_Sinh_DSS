@@ -9,6 +9,7 @@ import {
 } from "@/lib/queries/applications";
 import { getForecastAccuracy } from "@/lib/queries/forecast";
 import { scoreNv, axisScores, type NvInput } from "@/lib/dss/recommend";
+import { buildStudentProfileInsights } from "@/lib/dss/insights";
 import { RecommendationBoard, type SigmaItem } from "./_components/recommendation-board";
 
 export default function SigmaPage({
@@ -56,7 +57,7 @@ async function SigmaContent({
   const maeMap = Object.fromEntries(acc.map((a) => [a.programId, a.mae]));
   const empMap = await getEmploymentRateByPrograms(apps.map((a) => a.program_id));
 
-  const items: SigmaItem[] = apps.map((a) => {
+  const scoredList = apps.map((a) => {
     const input: NvInput = {
       programId: a.program_id,
       majorName: a.major_name,
@@ -72,17 +73,27 @@ async function SigmaContent({
       estTotalCostVnd: a.est_total_cost_vnd,
       isAdmitted: a.is_admitted,
     };
-    const s = scoreNv(input);
-    return {
-      programId: a.program_id,
-      majorName: a.major_name,
-      shortName: a.short_name,
-      universityCode: a.university_code,
-      bucket: s.bucket,
-      admitProb: s.admitProb,
-      axes: axisScores(s),
-    };
+    return scoreNv(input);
   });
 
-  return <RecommendationBoard options={options} selected={studentId} items={items} />;
+  const items: SigmaItem[] = scoredList.map((s) => ({
+    programId: s.programId,
+    majorName: s.majorName,
+    shortName: s.shortName,
+    universityCode: s.universityCode,
+    bucket: s.bucket,
+    admitProb: s.admitProb,
+    axes: axisScores(s),
+  }));
+
+  const insights = buildStudentProfileInsights({ scored: scoredList });
+
+  return (
+    <RecommendationBoard
+      options={options}
+      selected={studentId}
+      items={items}
+      insights={insights}
+    />
+  );
 }

@@ -144,6 +144,11 @@ export function LaborDemandPanel({ demands }: { demands: FactLaborDemand[] }) {
   );
 
   const chartHeight = Math.max(240, growth.length * 32 + 40);
+  const posGrowthCount = growth.filter((g) => g.growth >= 0).length;
+  const topGrowth = [...growth].sort((a, b) => b.growth - a.growth)[0];
+  const demandTitle = topGrowth
+    ? `${posGrowthCount}/${growth.length} chỉ số nhu cầu nhân lực tăng trưởng dương, dẫn đầu ${topGrowth.label} (${fmtPct(topGrowth.growth)})`
+    : "Biến động nhu cầu tuyển dụng (K04)";
 
   return (
     <div className="space-y-4">
@@ -186,7 +191,7 @@ export function LaborDemandPanel({ demands }: { demands: FactLaborDemand[] }) {
 
       {growth.length ? (
         <ChartCard
-          title="Tăng trưởng nhu cầu tuyển dụng so với năm trước (K04)"
+          title={demandTitle}
           description="Dương (xanh) là nhu cầu tăng · âm (đỏ) là nhu cầu giảm, tính trên 2 kỳ gần nhất của cùng chỉ số."
           table={growthTable}
         >

@@ -18,6 +18,11 @@ import { IELTS_ADMISSION_BONUSES } from "@/lib/dss/scale";
 import { formatVndShort } from "@/lib/format";
 import { getSubjectCombinationOptions } from "@/lib/queries/signals";
 import { ScoreForm } from "./_components/score-form";
+import {
+  CoreInsightsCallout,
+  IfThenRulesCard,
+} from "@/components/dss/core-insights-callout";
+import { buildScoreAdviceInsights } from "@/lib/dss/insights";
 
 type SP = Promise<{
   score?: string;
@@ -174,9 +179,22 @@ async function Results({
   const counts: Record<Bucket, number> = { reach: 0, match: 0, safety: 0 };
   items.forEach((it) => counts[it.bucket]++);
   const top = items.slice(0, 50);
+  const insights = buildScoreAdviceInsights({
+    score,
+    budgetYear: budget,
+    items,
+  });
+  const adviceTitle = top[0]
+    ? `Ở mức ${score.toFixed(2).replace(".", ",")} điểm, ${counts.safety + counts.match}/${items.length} ngành nằm vùng Vừa sức–Chắc đỗ; dẫn đầu là ${top[0].majorName ?? top[0].programId} (${top[0].shortName ?? top[0].universityCode} · Σ ${Math.round(top[0].composite)}/100)`
+    : `Chưa có ngành gợi ý ở mức ${score.toFixed(2).replace(".", ",")} điểm`;
 
   return (
     <div className="space-y-4">
+      <CoreInsightsCallout
+        points={insights.points}
+        subtitle={`Điểm xét ${score.toFixed(2).replace(".", ",")}/30`}
+      />
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Tile
           label="Ngành xét"
@@ -190,10 +208,7 @@ async function Results({
 
       <Card>
         <div className="p-5 pb-0">
-          <h3 className="text-base font-semibold">
-            Top ngành gợi ý (điểm bạn nhập: {score.toFixed(2).replace(".", ",")}
-            )
-          </h3>
+          <h3 className="text-base font-semibold">{adviceTitle}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Sắp theo điểm tổng hợp (đỗ + phù hợp{holland ? " Holland" : ""} +
             việc làm
@@ -315,6 +330,8 @@ async function Results({
           </p>
         </CardContent>
       </Card>
+
+      <IfThenRulesCard rules={insights.rules} />
     </div>
   );
 }

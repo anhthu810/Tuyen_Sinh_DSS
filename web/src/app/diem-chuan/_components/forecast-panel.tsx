@@ -67,6 +67,13 @@ export async function ForecastPanel({
   }
 
   const data = buildChartData(points, mae);
+  const latestMa2 = [...data].reverse().find((r) => r.ma2 != null);
+  const latestActual = [...data].reverse().find((r) => r.actual != null);
+  const forecastTitle = latestMa2?.ma2 != null
+    ? `${programLabel} dự báo ${latestMa2.year} ở mức ${latestMa2.ma2.toFixed(2).replace(".", ",")} điểm${mae != null ? ` — cần giữ biên an toàn +${Math.ceil(mae)} điểm (MAE ±${mae.toFixed(2).replace(".", ",")})` : ""}`
+    : latestActual?.actual != null
+      ? `${programLabel} ghi nhận điểm chuẩn gần nhất ${latestActual.actual.toFixed(2).replace(".", ",")} điểm (năm ${latestActual.year})`
+      : `Chuỗi điểm chuẩn tham chiếu của ${programLabel}`;
 
   const table = (
     <div className="overflow-x-auto">
@@ -121,7 +128,7 @@ export async function ForecastPanel({
       ) : null}
 
       <ChartCard
-        title={`Dự báo điểm chuẩn – ${programLabel}`}
+        title={forecastTitle}
         description="Đường liền: điểm chuẩn thực tế · đường đứt: dự báo NAIVE (năm trước) và MA2 (TB 2 năm trước) · vùng phủ nhạt: dải ±MAE quanh MA2."
         table={table}
       >

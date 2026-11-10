@@ -116,6 +116,11 @@ async function EmploymentSection({ searchParams }: { searchParams: SearchParams 
     label: r.major_name ?? r.program_label ?? r.program_id,
     rate: r.employment_rate_pct ?? 0,
   }));
+  const highEmpCount = top.filter((r) => (r.employment_rate_pct ?? 0) >= 90).length;
+  const topMajor = top[0];
+  const empChartTitle = topMajor
+    ? `${highEmpCount}/${top.length} ngành dẫn đầu đạt ≥90% việc làm sau 1 năm; cao nhất là ${topMajor.major_name ?? topMajor.program_id} (${fmtPct(topMajor.employment_rate_pct)})`
+    : "Chưa đủ dữ liệu để xếp hạng tỷ lệ việc làm theo ngành";
 
   const table: ReactNode = (
     <div className="overflow-x-auto">
@@ -173,7 +178,7 @@ async function EmploymentSection({ searchParams }: { searchParams: SearchParams 
       </Card>
 
       <ChartCard
-        title="Top 15 ngành theo tỷ lệ việc làm sau 1 năm"
+        title={empChartTitle}
         description="Màu theo ngưỡng: ≥90% xanh · 80–90% vàng · &lt;80% đỏ."
         table={table}
       >

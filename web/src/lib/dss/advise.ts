@@ -35,6 +35,7 @@ export type AdviseItem = {
   fit: number | null;
   employmentRate: number | null;
   afford: number | null; // điểm 0..100
+  affordabilityIndexPct: number | null; // % chi phí / tổng ngân sách
   estTotalCost: number | null;
   composite: number; // 0..100
 };
@@ -77,6 +78,7 @@ export async function adviseFromScore(
 
     let estTotalCost: number | null = null;
     let afford: number | null = null;
+    let affordabilityIndexPct: number | null = null;
     if (s.tuitionMid != null && s.durationYears != null) {
       const dur = Math.max(1, Math.round(s.durationYears));
       let t = 0;
@@ -85,6 +87,7 @@ export async function adviseFromScore(
       estTotalCost = Math.round(t + COST_PARAMS.livingVndYear * dur);
       if (input.budgetVndYear && input.budgetVndYear > 0) {
         const idx = (estTotalCost / (input.budgetVndYear * dur)) * 100;
+        affordabilityIndexPct = idx;
         afford = clamp(200 - idx);
       }
     }
@@ -112,6 +115,7 @@ export async function adviseFromScore(
       fit,
       employmentRate: s.employmentRate,
       afford,
+      affordabilityIndexPct,
       estTotalCost,
       composite,
     });

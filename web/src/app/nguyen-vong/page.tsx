@@ -20,6 +20,11 @@ import {
 } from "@/lib/dss/recommend";
 import { StudentPicker } from "./_components/student-picker";
 import { TrialPlanner } from "./_components/trial-planner";
+import {
+  CoreInsightsCallout,
+  IfThenRulesCard,
+} from "@/components/dss/core-insights-callout";
+import { buildStudentProfileInsights } from "@/lib/dss/insights";
 
 const K01_BASELINE = 64.8; // % — tỷ lệ đỗ NV1–3 toàn hệ (tham chiếu)
 
@@ -138,6 +143,13 @@ async function Q1Content({
   });
   const top3 = [...scored].sort((a, b) => a.nvOrder - b.nvOrder).slice(0, 3);
   const top3AllReach = top3.length >= 3 && top3.every((s) => s.bucket === "reach");
+  const insights = buildStudentProfileInsights({
+    scored,
+    familyBudgetYear: student?.family_budget_vnd_year,
+  });
+  const ladderTitle = scored.length
+    ? `Sắp xếp ${scored.length} nguyện vọng theo bậc thang giữ ${Math.round(probAny)}% cơ hội đỗ (${counts.reach} Với cao · ${counts.match} Vừa sức · ${counts.safety} Chắc đỗ)`
+    : "Chưa có nguyện vọng để đề xuất thứ tự";
 
   return (
     <div className="space-y-4">
@@ -150,6 +162,9 @@ async function Q1Content({
           Thử xếp nguyện vọng với hồ sơ mới
         </Link>
       </div>
+
+      {/* Insight & Khuyến nghị cốt lõi ngay đầu trang */}
+      <CoreInsightsCallout points={insights.points} subtitle={`Hồ sơ ${studentId}`} />
 
       {/* Thẻ thông tin HS */}
       <Card>
@@ -207,7 +222,7 @@ async function Q1Content({
       {/* Danh sách NV khuyến nghị */}
       <Card>
         <div className="p-5 pb-0">
-          <h3 className="text-base font-semibold">Thứ tự nguyện vọng khuyến nghị</h3>
+          <h3 className="text-base font-semibold">{ladderTitle}</h3>
           <p className="mt-1 text-sm text-muted-foreground">
             Ladder: ngành mơ ước (Với cao) ưu tiên trên, xen Vừa sức, chốt bằng Chắc đỗ.
           </p>
@@ -240,6 +255,8 @@ async function Q1Content({
           )}
         </CardContent>
       </Card>
+
+      <IfThenRulesCard rules={insights.rules} />
 
       <p className="text-xs text-muted-foreground">
         Xem độ tin cậy dự báo từng ngành ở{" "}

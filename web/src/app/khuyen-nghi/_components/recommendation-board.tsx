@@ -1,11 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/ui/empty-state";
+import { StudentCombobox } from "@/components/dss/student-combobox";
+import {
+  CoreInsightsCallout,
+  IfThenRulesCard,
+} from "@/components/dss/core-insights-callout";
+import type { StudentInsightBundle } from "@/lib/dss/insights";
 import {
   weightedScore,
   BUCKET_LABEL,
@@ -47,13 +51,13 @@ export function RecommendationBoard({
   options,
   selected,
   items,
+  insights,
 }: {
   options: { student_id: string; label: string }[];
   selected: string;
   items: SigmaItem[];
+  insights: StudentInsightBundle;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
   const [w, setW] = useState<Weights>({ fit: 25, prob: 25, job: 25, afford: 25 });
 
   const ranked = useMemo(() => {
@@ -64,20 +68,9 @@ export function RecommendationBoard({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <label className="text-sm font-medium text-muted-foreground">Hồ sơ học sinh:</label>
-        <Select
-          value={selected}
-          onChange={(e) => router.push(`${pathname}?student=${e.target.value}`)}
-          className="min-w-72"
-        >
-          {options.map((o) => (
-            <option key={o.student_id} value={o.student_id}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
-      </div>
+      <StudentCombobox options={options} selected={selected} />
+
+      <CoreInsightsCallout points={insights.points} subtitle={`Hồ sơ ${selected}`} />
 
       {/* Trọng số */}
       <Card>
@@ -135,6 +128,13 @@ export function RecommendationBoard({
 
           {/* Bảng đầy đủ */}
           <Card>
+            <div className="p-5 pb-0">
+              <h3 className="text-base font-semibold">
+                {ranked[0].it.majorName ?? ranked[0].it.programId} (
+                {ranked[0].it.shortName ?? ranked[0].it.universityCode}) dẫn đầu bảng xếp hạng đa
+                tiêu chí với {Math.round(ranked[0].score)}/100 điểm trên {ranked.length} nguyện vọng
+              </h3>
+            </div>
             <CardContent className="p-5">
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -180,6 +180,8 @@ export function RecommendationBoard({
               </div>
             </CardContent>
           </Card>
+
+          <IfThenRulesCard rules={insights.rules} />
         </>
       )}
     </div>

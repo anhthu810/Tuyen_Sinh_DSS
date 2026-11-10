@@ -1,95 +1,54 @@
-// Cấu hình điều hướng + metadata trang (dùng chung cho sidebar và header).
+// Cấu hình điều hướng 4 trang cốt lõi chuẩn EIS/DSS (Assignment 3).
 export type NavItem = {
   href: string;
   label: string;
   icon: string; // tên icon lucide-react
   title: string;
   description: string;
+  stage: string;
   milestone?: string;
+  childPrefixes?: string[];
 };
 
 export const NAV: NavItem[] = [
   {
     href: "/",
-    label: "Tổng quan",
+    label: "Tổng quan KPI",
     icon: "LayoutDashboard",
-    title: "Tổng quan",
-    description: "7 KPI chủ chốt (K01–K07) trên toàn bộ dữ liệu tuyển sinh 2023–2026.",
-  },
-  {
-    href: "/tu-van-ai",
-    label: "Tư vấn AI",
-    icon: "Bot",
-    title: "Tư vấn AI chọn ngành",
+    title: "Tổng quan KPI (Executive Overview)",
     description:
-      "Nhập điểm + mô tả tính cách/sở thích → GLM-5.3 phân tích và gợi ý 3–5 ngành phù hợp nhất kèm lý do.",
+      "6–7 chỉ số cốt lõi (7±2) phản ánh hiệu quả trúng tuyển, sai số dự báo, cơ hội việc làm và rủi ro tài chính trên 7 trường · 380 ngành · 500 HS.",
+    stage: "Executive",
+    childPrefixes: ["/bao-cao"],
   },
   {
-    href: "/tu-van",
-    label: "Tư vấn chọn ngành",
+    href: "/chan-doan",
+    label: "Insight & Chẩn đoán",
     icon: "Target",
-    title: "Tư vấn chọn ngành & trường",
+    title: "Insight & Chẩn đoán (Diagnostic)",
     description:
-      "Nhập điểm (thang 30) → quét toàn bộ ngành, phân loại cơ hội đỗ và gợi ý ngành/trường phù hợp theo sở thích, việc làm, chi phí.",
+      "Phân bổ nguyện vọng (Với cao / Vừa sức / Chắc đỗ), tương quan điểm thi – học phí – việc làm và điểm nghẽn mô hình theo hồ sơ học sinh.",
+    stage: "Diagnostic",
+    childPrefixes: ["/nguyen-vong", "/tu-van", "/khuyen-nghi", "/viec-lam", "/chi-phi", "/explorer"],
   },
   {
-    href: "/nguyen-vong",
-    label: "Xếp nguyện vọng",
-    icon: "ListOrdered",
-    title: "Xếp nguyện vọng",
-    description:
-      "Xếp NV vừa có cơ hội vào ngành mơ ước, vừa chắc đỗ — phân loại reach / match / safety.",
-    milestone: "M3 + M4",
-  },
-  {
-    href: "/diem-chuan",
-    label: "Dự báo điểm chuẩn",
+    href: "/du-bao",
+    label: "Dự báo & Độ tin cậy",
     icon: "TrendingUp",
-    title: "Dự báo điểm chuẩn",
-    description: "Dự báo (NAIVE/MA2) vs thực tế, sai số MAE (K03) và khoảng an toàn nên giữ.",
-    milestone: "M3",
-  },
-  {
-    href: "/viec-lam",
-    label: "Cơ hội việc làm",
-    icon: "Briefcase",
-    title: "Cơ hội việc làm",
-    description: "Tỷ lệ việc làm (K05) + tăng trưởng nhu cầu ngành (K04) theo nhóm nghề.",
-    milestone: "M3",
-  },
-  {
-    href: "/chi-phi",
-    label: "Chi phí & chi trả",
-    icon: "Wallet",
-    title: "Chi phí & khả năng chi trả",
-    description: "Tổng chi phí toàn khóa (K06) và áp lực tài chính so với ngân sách (K07).",
-    milestone: "M3",
-  },
-  {
-    href: "/khuyen-nghi",
-    label: "Khuyến nghị tổng hợp",
-    icon: "Sparkles",
-    title: "Khuyến nghị tổng hợp",
+    title: "Dự báo & Độ tin cậy (Forecasting)",
     description:
-      "Xếp hạng ngành theo 4 trục: phù hợp (Holland) · xác suất đỗ · việc làm · chi phí (trọng số chỉnh được).",
-    milestone: "M4",
+      "Dự báo điểm chuẩn (MA2 / NAIVE) kèm biên sai số ±MAE, khoảng tin cậy và kiểm định độ phủ dữ liệu.",
+    stage: "Forecasting",
+    childPrefixes: ["/diem-chuan", "/chat-luong-du-lieu"],
   },
   {
-    href: "/explorer",
-    label: "Tra cứu ngành",
-    icon: "Search",
-    title: "Tra cứu ngành",
-    description: "Bảng 380 ngành với mọi dữ liệu fact; trang chi tiết từng ngành.",
-    milestone: "M2",
-  },
-  {
-    href: "/chat-luong-du-lieu",
-    label: "Chất lượng dữ liệu",
-    icon: "ShieldCheck",
-    title: "Chất lượng & minh bạch dữ liệu",
+    href: "/what-if",
+    label: "What-if & Khuyến nghị",
+    icon: "SlidersHorizontal",
+    title: "Kịch bản What-if & Khuyến nghị (Prescriptive)",
     description:
-      "Độ phủ, độ tin cậy, nhãn THẬT vs MÔ PHỎNG, phạm vi tính của từng KPI.",
-    milestone: "M5",
+      "Thanh trượt giả lập điểm thi, học phí, chỉ tiêu & ngân sách; đường cong độ nhạy và quy tắc khuyến nghị hành động IF–THEN.",
+    stage: "Prescriptive",
   },
 ];
 

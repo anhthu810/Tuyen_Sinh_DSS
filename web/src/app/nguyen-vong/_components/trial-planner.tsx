@@ -14,6 +14,11 @@ import {
   type NvInput,
 } from "@/lib/dss/recommend";
 import { getSubjectCombinationOptions } from "@/lib/queries/signals";
+import {
+  CoreInsightsCallout,
+  IfThenRulesCard,
+} from "@/components/dss/core-insights-callout";
+import { buildStudentProfileInsights } from "@/lib/dss/insights";
 
 type TrialSearchParams = {
   score?: string;
@@ -104,6 +109,13 @@ export async function TrialPlanner({
   scored.forEach((item) => {
     if (item.bucket) counts[item.bucket]++;
   });
+  const insights = buildStudentProfileInsights({
+    scored,
+    familyBudgetYear: budget,
+  });
+  const trialTitle = recommended.length
+    ? `Danh sách ${recommended.length} nguyện vọng mẫu đạt ${Math.round(probabilityAtLeastOne)}% cơ hội đỗ (${counts.reach} Với cao · ${counts.match} Vừa sức · ${counts.safety} Chắc đỗ)`
+    : "Chưa có ngành phù hợp để xếp nguyện vọng mẫu";
 
   return (
     <div className="space-y-4">
@@ -243,6 +255,11 @@ export async function TrialPlanner({
         />
       ) : (
         <>
+          <CoreInsightsCallout
+            points={insights.points}
+            subtitle={`Hồ sơ thử · ${score!.toFixed(2).replace(".", ",")}/30đ`}
+          />
+
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <SummaryTile label="Nguyện vọng mẫu" value={`${recommended.length}`} />
             <SummaryTile
@@ -261,9 +278,7 @@ export async function TrialPlanner({
 
           <Card>
             <div className="p-5 pb-0">
-              <h3 className="text-base font-semibold">
-                Thứ tự nguyện vọng gợi ý
-              </h3>
+              <h3 className="text-base font-semibold">{trialTitle}</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 Danh sách được chọn từ các ngành trong dữ liệu và sắp theo nhóm
                 Với cao → Vừa sức → Chắc đỗ. Đây là mô phỏng, chưa lưu vào hệ
@@ -326,6 +341,7 @@ export async function TrialPlanner({
               </div>
             </CardContent>
           </Card>
+          <IfThenRulesCard rules={insights.rules} />
           <p className="text-xs text-muted-foreground">
             Tỷ lệ đỗ là ước tính dựa trên điểm chuẩn tham chiếu và sai số dự báo,
             không phải cam kết trúng tuyển.{" "}

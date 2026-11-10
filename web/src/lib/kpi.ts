@@ -8,6 +8,10 @@ export type Kpi = {
   question: string; // Q1..Q4
   display: string; // chuỗi hiển thị
   meaning: string;
+  formula: string;
+  threshold: string;
+  source: string;
+  rawValue: number | null;
   tone: KpiTone;
 };
 
@@ -118,6 +122,10 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       question: "Nguyện vọng",
       display: pct(k01),
       meaning: "Thấp → danh sách quá mạo hiểm, cần bổ sung NV an toàn.",
+      formula: "COUNT(HS trúng tuyển với NV_đỗ ≤ 3) / COUNT(Tổng HS) × 100%",
+      threshold: "≥ 65% Tốt · 50–64% Lưu ý · < 50% Rủi ro cao",
+      source: "dim_student (500 HS mô phỏng)",
+      rawValue: k01,
       tone: k01 == null ? "neutral" : k01 >= 65 ? "good" : k01 >= 50 ? "warn" : "bad",
     },
     {
@@ -126,6 +134,10 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       question: "Nguyện vọng",
       display: pct(k02),
       meaning: "Cao → tận dụng ĐGNL/ĐGTD/học bạ để tăng cơ hội đỗ.",
+      formula: "COUNT(NV đủ điểm với best_method ≠ THPT) / COUNT(NV đủ điểm) × 100%",
+      threshold: "≥ 35% Lợi thế rõ rệt",
+      source: "main_dataset (score_eligible > 0)",
+      rawValue: k02,
       tone: k02 == null ? "neutral" : k02 >= 35 ? "good" : "neutral",
     },
     {
@@ -134,6 +146,10 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       question: "Điểm chuẩn",
       display: k03 == null ? "—" : k03.toFixed(2).replace(".", ",") + " điểm",
       meaning: "Nhỏ → yên tâm chốt NV; lớn → giữ khoảng an toàn rộng hơn.",
+      formula: "AVG(|Điểm_chuẩn_thực − Điểm_dự_báo_MA2|)",
+      threshold: "≤ 1,5đ Tin cậy cao · 1,5–2,5đ Trung bình · > 2,5đ Thấp",
+      source: "fact_cutoff_forecast (MA2)",
+      rawValue: k03,
       tone: k03 == null ? "neutral" : k03 <= 1.5 ? "good" : k03 <= 2.5 ? "warn" : "bad",
     },
     {
@@ -141,7 +157,11 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       name: "Tốc độ tăng trưởng nhu cầu ngành",
       question: "Việc làm",
       display: "Theo ngành",
-      meaning: "Tính theo từng nhóm nghề ở mục Cơ hội việc làm (dữ liệu nhu cầu tuyển dụng).",
+      meaning: "Tính theo từng nhóm nghề ở mục Chẩn đoán & Việc làm.",
+      formula: "(Giá_trị_kỳ_sau − Giá_trị_kỳ_trước) / Giá_trị_kỳ_trước × 100%",
+      threshold: "> 0% Tăng trưởng · < 0% Thu hẹp",
+      source: "fact_labor_demand",
+      rawValue: null,
       tone: "neutral",
     },
     {
@@ -150,6 +170,10 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       question: "Việc làm",
       display: pct(k05),
       meaning: "≥ 90% → đầu ra ổn định.",
+      formula: "AVG(employment_rate_pct) trên fact_employment",
+      threshold: "≥ 90% Ổn định · 80–89% Trung bình · < 80% Rủi ro",
+      source: "fact_employment (34 bản ghi)",
+      rawValue: k05,
       tone: k05 == null ? "neutral" : k05 >= 90 ? "good" : k05 >= 80 ? "warn" : "bad",
     },
     {
@@ -158,6 +182,10 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       question: "Chi phí",
       display: vnd,
       meaning: "Số tiền gia đình cần chuẩn bị cho toàn khóa (bình quân NV trúng tuyển).",
+      formula: "AVG(Σ Học_phí_năm + (Sinh_hoạt − Hỗ_trợ) × Số_năm)",
+      threshold: "Đối chiếu với tổng ngân sách gia đình (K07 ≤ 100%)",
+      source: "main_dataset (is_admitted = true)",
+      rawValue: k06,
       tone: "neutral",
     },
     {
@@ -166,6 +194,10 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       question: "Chi phí",
       display: pct(k07),
       meaning: "> 100% chi phí/ngân sách → cần học bổng, tín dụng, hoặc ngành học phí thấp hơn.",
+      formula: "COUNT(HS đỗ có Tổng_chi_phí / Tổng_ngân_sách > 100%) / COUNT(HS đỗ) × 100%",
+      threshold: "≤ 30% An toàn · 31–50% Lưu ý · > 50% Báo động",
+      source: "main_dataset (is_admitted = true)",
+      rawValue: k07,
       tone: k07 == null ? "neutral" : k07 <= 30 ? "good" : k07 <= 50 ? "warn" : "bad",
     },
   ];

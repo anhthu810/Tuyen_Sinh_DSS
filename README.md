@@ -9,7 +9,6 @@
 - Tra cứu ngành, điểm chuẩn và dự báo.
 - Xem thông tin việc làm, học phí và khả năng chi trả.
 - Theo dõi chất lượng và độ phủ dữ liệu.
-- Tư vấn ngành bằng AI (cần cấu hình khóa API riêng).
 
 Phạm vi dữ liệu và logic DSS được mô tả trong kế hoạch dự án: 7 trường đại học, 380 chương trình và 500 hồ sơ học sinh mô phỏng.
 
@@ -38,7 +37,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Thay giá trị mẫu bằng URL và anon key của project Supabase. Trang có thể khởi động khi chưa cấu hình, nhưng dữ liệu từ Supabase sẽ không tải được. Tính năng tư vấn AI cần thêm `ZAI_API_KEY` ở phía server. Không đưa `service_role` key hoặc khóa bí mật vào biến `NEXT_PUBLIC_*`.
+Thay giá trị mẫu bằng URL và anon key của project Supabase. Trang có thể khởi động khi chưa cấu hình, nhưng dữ liệu từ Supabase sẽ không tải được. Không đưa `service_role` key hoặc khóa bí mật vào biến `NEXT_PUBLIC_*`.
 
 Các lệnh khác, chạy trong `web/`:
 
