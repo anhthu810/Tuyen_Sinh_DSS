@@ -37,7 +37,7 @@ function getIeltsSuggestion(
   item: Awaited<ReturnType<typeof adviseFromScore>>[number],
   baseScore: number,
 ) {
-  if (item.bucket === "safety" || baseScore >= 30) return null;
+  if (item.bucket === "safety" || item.belowEligibility || baseScore >= 30) return null;
 
   const currentBucket = item.bucket;
   const targetBucket = currentBucket === "reach" ? "match" : "safety";
@@ -248,9 +248,18 @@ async function Results({
                       {it.shortName ?? it.universityCode}
                     </td>
                     <td className="py-2 pr-3">
-                      <Badge tone={BUCKET_TONE[it.bucket]}>
-                        {BUCKET_LABEL[it.bucket]}
-                      </Badge>
+                      {it.belowEligibility ? (
+                        <Badge
+                          tone="danger"
+                          title={`Dưới ngưỡng đầu vào ${it.minEligibility30}/30 — ngưỡng này khác điểm chuẩn trúng tuyển`}
+                        >
+                          Dưới ngưỡng đầu vào
+                        </Badge>
+                      ) : (
+                        <Badge tone={BUCKET_TONE[it.bucket]}>
+                          {BUCKET_LABEL[it.bucket]}
+                        </Badge>
+                      )}
                     </td>
                     <td className="py-2 pr-3 text-right tabular-nums">
                       {it.refCutoff30.toFixed(2).replace(".", ",")}

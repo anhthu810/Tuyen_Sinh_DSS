@@ -62,11 +62,13 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
     return d ? ((num.count ?? 0) / d) * 100 : null;
   }, null);
 
-  // K03 — MAE dự báo MA2 (thang 30), chỉ các dòng đã có actual
+  // K03 — MAE dự báo MA2 trên chuỗi chính (THPT / quy đổi chung, thang 30), chỉ dòng có actual.
+  // Không trộn phương thức: học bạ, TSA, HSA... có thang và chuỗi riêng.
   const k03 = await safe<number | null>(async () => {
     const { data } = await supabase
       .from("fact_cutoff_forecast")
       .select("abs_error")
+      .eq("is_primary", true)
       .ilike("method", "MA2%")
       .not("actual_cutoff", "is", null);
     return mean(

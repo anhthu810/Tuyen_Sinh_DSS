@@ -29,6 +29,10 @@ export type AdviseItem = {
   refSource: "forecast" | "actual";
   refYear: number | null;
   margin: number;
+  /** Ngưỡng đầu vào (thang 30) nếu có — khác điểm chuẩn trúng tuyển. */
+  minEligibility30: number | null;
+  /** Điểm HS dưới ngưỡng đầu vào → không đủ điều kiện xét bằng điểm thi, dù gần điểm chuẩn. */
+  belowEligibility: boolean;
   band: number;
   bucket: Bucket;
   admitProb: number; // 0..1
@@ -70,7 +74,9 @@ export async function adviseFromScore(
     const band = effectiveBand(s.mae);
     const margin = input.score30 - ref;
     const bucket = classify(margin, band);
-    const admitProb = admitProbability(margin, band);
+    const belowEligibility =
+      s.minEligibility30 != null && input.score30 < s.minEligibility30;
+    const admitProb = belowEligibility ? 0 : admitProbability(margin, band);
     const fit = input.hollandCode
       ? hollandMatch(input.hollandCode, s.hollandCode)
       : null;
@@ -106,6 +112,8 @@ export async function adviseFromScore(
       refSource,
       refYear,
       margin,
+      minEligibility30: s.minEligibility30,
+      belowEligibility,
       band,
       bucket,
       admitProb,

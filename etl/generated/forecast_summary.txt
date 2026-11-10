@@ -1,0 +1,33 @@
+Nguồn: DSS_Group5_DataPackage_v5.xlsx
+Tổng chuỗi: 1617 · Tổng dòng: 5151 · Ngành có chuỗi chính (tư vấn THPT): 315
+
+Chuỗi theo nhóm phương thức × trạng thái:
+  nhóm 1  CAUTION                12
+  nhóm 1  DISCONTINUED           236
+  nhóm 1  INSUFFICIENT_HISTORY   46
+  nhóm 1  OK                     311
+  nhóm 2  CAUTION                63
+  nhóm 2  DISCONTINUED           52
+  nhóm 2  INSUFFICIENT_HISTORY   7
+  nhóm 3  DISCONTINUED           106
+  nhóm 3  INSUFFICIENT_HISTORY   419
+  nhóm 3  NOT_FORECASTED         21
+  nhóm 3  OK                     18
+  nhóm 4  NOT_FORECASTED         248
+  nhóm 5  NOT_FORECASTED         78
+
+MAE backtest (dòng có thực tế), theo nhóm × mô hình:
+  nhóm 1     HOLT (α=0.6, β=0.2)      n=70    MAE=1.805
+  nhóm 1     MA2 (TB 2 năm trước)     n=146   MAE=1.454
+  nhóm 1     NAIVE (năm trước)        n=678   MAE=1.071
+  nhóm 2     HOLT (α=0.6, β=0.2)      n=39    MAE=2.751
+  nhóm 2     MA2 (TB 2 năm trước)     n=79    MAE=1.580
+  nhóm 2     NAIVE (năm trước)        n=191   MAE=1.083
+  nhóm 3     HOLT (α=0.6, β=0.2)      n=13    MAE=4.426
+  nhóm 3     MA2 (TB 2 năm trước)     n=30    MAE=3.112
+  nhóm 3     NAIVE (năm trước)        n=129   MAE=2.772
+  nhóm chính HOLT (α=0.6, β=0.2)      n=70    MAE=1.805
+  nhóm chính MA2 (TB 2 năm trước)     n=146   MAE=1.454
+  nhóm chính NAIVE (năm trước)        n=461   MAE=1.231
+
+Dòng dự báo MA2 cho năm tới: 404 (trong đó qua thay đổi quy chế: 404)

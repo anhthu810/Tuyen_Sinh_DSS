@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { getQualityStats } from "@/lib/queries/quality";
+import { getQualityStats, getRegulationChecks } from "@/lib/queries/quality";
+import { Badge } from "@/components/ui/badge";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,6 +28,10 @@ export default function ChatLuongDuLieuPage() {
           <KpiScope />
         </div>
 
+        <Suspense fallback={<TableSkeleton />}>
+          <RegulationSection />
+        </Suspense>
+
         <Card>
           <CardHeader>
             <CardTitle>Ghi chú độ phủ</CardTitle>
@@ -52,6 +57,49 @@ async function ConfidenceSection() {
       cutoffConfidence={cutoffConfidence}
       cutoffScaleUnconfirmed={cutoffScaleUnconfirmed}
     />
+  );
+}
+
+async function RegulationSection() {
+  const checks = await getRegulationChecks();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Kiểm tra theo quy chế tuyển sinh</CardTitle>
+      </CardHeader>
+      <CardContent className="text-sm">
+        {checks == null ? (
+          <p className="text-muted-foreground">
+            Chưa có view kiểm tra — chạy dss-web-plan/fix/02_method_aware_cutoff.sql.
+          </p>
+        ) : (
+          <table className="w-full">
+            <thead>
+              <tr className="border-b text-left text-xs text-muted-foreground">
+                <th className="py-2 pr-3 font-medium">Quy định</th>
+                <th className="py-2 pr-3 font-medium">Kết quả</th>
+                <th className="py-2 text-right font-medium">Số dòng</th>
+              </tr>
+            </thead>
+            <tbody>
+              {checks.map((c) => (
+                <tr key={`${c.rule_name}-${c.check_result}`} className="border-b last:border-0">
+                  <td className="py-2 pr-3">{c.rule_name}</td>
+                  <td className="py-2 pr-3">
+                    <Badge tone={c.check_result === "OK" ? "success" : "warning"}>
+                      {c.check_result}
+                    </Badge>
+                  </td>
+                  <td className="py-2 text-right tabular-nums">
+                    {c.n_rows.toLocaleString("vi-VN")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

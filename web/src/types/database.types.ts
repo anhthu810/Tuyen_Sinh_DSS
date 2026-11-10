@@ -108,7 +108,34 @@ export type FactCutoffScore = {
   note: string | null;
   published_code: string | null;
   data_version: string | null;
+  // --- 02_method_aware_cutoff.sql ---
+  method_family?: MethodFamily | null;
+  exam_type?: string | null;
+  raw_cutoff_score?: number | null;
+  converted_cutoff_score?: number | null; // chỉ khi có căn cứ quy đổi
+  conversion_rule_year?: number | null;
+  minimum_eligibility_score?: number | null; // ngưỡng đầu vào ≠ điểm trúng tuyển
+  cutoff_source?: string | null;
+  regulation_version?: string | null;
+  is_admission_cutoff?: boolean | null;
+  is_forecastable?: boolean | null;
 };
+
+/** 1 THPT · 2 Học bạ · 3 Kỳ thi độc lập (TSA/HSA/SPT/SAT/V-ACT) · 4 Kết hợp · 5 Năng khiếu/tài năng/phỏng vấn */
+export type MethodFamily = 1 | 2 | 3 | 4 | 5;
+export type MethodGroup =
+  | "GROUP_THPT"
+  | "GROUP_HOCBA"
+  | "GROUP_EXAM"
+  | "GROUP_COMBINED"
+  | "GROUP_TALENT";
+
+export type ForecastStatus =
+  | "OK"
+  | "CAUTION"
+  | "INSUFFICIENT_HISTORY"
+  | "DISCONTINUED"
+  | "NOT_FORECASTED";
 
 export type FactQuota = {
   quota_id: string;
@@ -175,11 +202,28 @@ export type FactCutoffForecast = {
   university_code: string;
   target_year: number;
   forecast_date: string | null;
-  method: string | null; // 'NAIVE (năm trước)' | 'MA2 (TB 2 năm trước)'
-  forecast_cutoff: number | null;
+  method: string | null; // 'ACTUAL' | 'NAIVE (năm trước)' | 'MA2 (TB 2 năm trước)' | 'HOLT (...)'
+  forecast_cutoff: number | null; // thang gốc của chuỗi (score_scale)
   actual_cutoff: number | null;
-  error: number | null;
+  error: number | null; // thực tế − dự báo
   abs_error: number | null;
+  // --- chuỗi: trường + ngành + phương thức + tổ hợp + thang ---
+  series_key: string | null;
+  admission_method: string | null;
+  exam_type: string | null;
+  method_family: MethodFamily | null;
+  subject_combination: string | null;
+  score_scale: number | null;
+  forecast_cutoff_30: number | null; // chỉ khi thang 30/40
+  n_history_years: number | null;
+  forecast_status: ForecastStatus | null;
+  status_reason: string | null;
+  crosses_policy_change: boolean | null;
+  regulation_version: string | null;
+  is_primary: boolean | null; // chuỗi THPT/quy đổi chung thang 30 dùng cho tư vấn
+  // --- 05_method_group.sql ---
+  method_group?: MethodGroup | null;
+  is_forecastable?: boolean | null; // FALSE: nhóm 4/5, thiếu năm, đã ngừng
 };
 
 export type FactSalary = {

@@ -16,6 +16,7 @@ export const chartPalette = {
   actual: "#4f46e5",
   naive: "#94a3b8",
   ma2: "#0891b2",
+  holt: "#8B5CF6", // tím — Holt (xu hướng)
   band: "#6366f1", // dải sai số (dùng với opacity thấp)
   // Trạng thái.
   positive: "#16a34a",
