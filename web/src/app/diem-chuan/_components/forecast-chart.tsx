@@ -18,13 +18,26 @@ export type ChartRow = {
   actual: number | null;
   naive: number | null;
   ma2: number | null;
+  holt: number | null;
   bandLow: number | null;
   bandHigh: number | null;
 };
 
 type RenderRow = ChartRow & { band: [number, number] | null };
 
-export function ForecastChart({ data, mae }: { data: ChartRow[]; mae: number | null }) {
+export function ForecastChart({
+  data,
+  mae,
+  bandLabel = "MA2",
+  hasHoltData = data.some((d) => d.holt != null),
+}: {
+  data: ChartRow[];
+  mae: number | null;
+  /** Mô hình làm tâm dải ±MAE. */
+  bandLabel?: string;
+  /** Chỉ vẽ đường Holt khi chuỗi có ≥ 3 năm (có dòng Holt). */
+  hasHoltData?: boolean;
+}) {
   const rows: RenderRow[] = data.map((d) => ({
     ...d,
     band:
@@ -50,7 +63,7 @@ export function ForecastChart({ data, mae }: { data: ChartRow[]; mae: number | n
           <Area
             type="monotone"
             dataKey="band"
-            name={`Dải ±MAE quanh MA2 (${mae.toFixed(2)})`}
+            name={`Dải ±MAE quanh ${bandLabel} (${mae.toFixed(2)})`}
             stroke="none"
             fill={chartPalette.band}
             fillOpacity={0.15}
@@ -66,6 +79,7 @@ export function ForecastChart({ data, mae }: { data: ChartRow[]; mae: number | n
           dot={{ r: 3 }}
           connectNulls
         />
+        {rows.some((r) => r.naive != null) ? (
         <Line
           type="monotone"
           dataKey="naive"
@@ -76,6 +90,8 @@ export function ForecastChart({ data, mae }: { data: ChartRow[]; mae: number | n
           dot={{ r: 3 }}
           connectNulls
         />
+        ) : null}
+        {rows.some((r) => r.ma2 != null) ? (
         <Line
           type="monotone"
           dataKey="ma2"
@@ -86,6 +102,19 @@ export function ForecastChart({ data, mae }: { data: ChartRow[]; mae: number | n
           dot={{ r: 3 }}
           connectNulls
         />
+        ) : null}
+        {hasHoltData ? (
+          <Line
+            type="monotone"
+            dataKey="holt"
+            name="Holt (α=0.6, β=0.2)"
+            stroke={chartPalette.holt}
+            strokeWidth={2}
+            strokeDasharray="3 3"
+            dot={{ r: 3 }}
+            connectNulls
+          />
+        ) : null}
       </ComposedChart>
     </ResponsiveContainer>
   );

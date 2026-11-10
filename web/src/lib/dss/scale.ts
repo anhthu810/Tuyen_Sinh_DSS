@@ -32,9 +32,33 @@ export function ieltsAdmissionBonus(band: number): number {
   if (!Number.isFinite(band) || band < 0 || band > 9) return 0;
   for (let i = IELTS_ADMISSION_BONUSES.length - 1; i >= 0; i--) {
     const bracket = IELTS_ADMISSION_BONUSES[i];
-    if (band >= bracket.band) return bracket.bonus;
+    if (band >= bracket.band) return capAdmissionBonus(bracket.bonus);
   }
   return 0;
+}
+
+// ---- Quy tắc quy chế (khớp hàm SQL trong 02_method_aware_cutoff.sql) ----
+
+/** Ngưỡng nguồn tuyển tối thiểu cho điểm thi THPT, thí sinh thi từ 2026 (thang 30). */
+export const THPT_MIN_ELIGIBILITY_FROM_2026 = 15;
+
+/** Trần tổng điểm cộng (thưởng/xét thưởng/khuyến khích) = 10% thang xét tuyển. */
+export function bonusCap(scale = 30): number {
+  return scale * 0.1;
+}
+
+export function capAdmissionBonus(bonus: number, scale = 30): number {
+  return Math.min(Math.max(0, bonus), bonusCap(scale));
+}
+
+/**
+ * Điểm ưu tiên thực hưởng: giữ nguyên khi tổng điểm (chưa cộng ưu tiên, thang 30)
+ * < 22,5; từ 22,5 trở lên = ((30 − tổng) / 7,5) × mức ưu tiên.
+ * Không cộng một mức cố định cho mọi thí sinh.
+ */
+export function effectivePriorityBonus(baseBonus: number, rawTotal30: number): number {
+  if (rawTotal30 < 22.5) return baseBonus;
+  return Math.max(0, ((30 - rawTotal30) / 7.5) * baseBonus);
 }
 
 // Quy đổi về thang 30 (giả định tuyến tính của nhóm — KPI_Sheet THAM SỐ).

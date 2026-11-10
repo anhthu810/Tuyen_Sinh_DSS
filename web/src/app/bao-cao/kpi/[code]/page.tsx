@@ -120,7 +120,8 @@ async function loadReport(code: string): Promise<Report | null> {
   if (code === "K03") {
     const { data, error } = await supabase
       .from("fact_cutoff_forecast")
-      .select("program_id, target_year, method, forecast_cutoff, actual_cutoff, abs_error, dim_program(major_name)")
+      .select("program_id, target_year, method, admission_method, score_scale, forecast_cutoff, actual_cutoff, abs_error, dim_program(major_name)")
+      .eq("is_primary", true)
       .ilike("method", "MA2%")
       .not("actual_cutoff", "is", null)
       .limit(2000);
@@ -129,6 +130,8 @@ async function loadReport(code: string): Promise<Report | null> {
       program_id: string;
       target_year: number;
       method: string | null;
+      admission_method: string | null;
+      score_scale: number | null;
       forecast_cutoff: number | null;
       actual_cutoff: number | null;
       abs_error: number | null;
@@ -139,24 +142,26 @@ async function loadReport(code: string): Promise<Report | null> {
       .filter((value): value is number => value != null);
     return {
       title: KPI_NAMES.K03,
-      description: "Sai số tuyệt đối giữa dự báo MA2 và điểm chuẩn thực tế, theo ngành và năm.",
-      formula: "MAE = trung bình |điểm dự báo MA2 − điểm thực tế|, trên các dòng có actual_cutoff.",
+      description: "Sai số tuyệt đối giữa dự báo MA2 và điểm chuẩn thực tế trên chuỗi chính của từng ngành (cùng trường + ngành + phương thức + thang điểm).",
+      formula: "MAE = trung bình |điểm dự báo MA2 − điểm thực tế|, chỉ trên chuỗi THPT / quy đổi chung (is_primary), dòng có actual_cutoff.",
       metrics: [
         { label: "Dòng có điểm thực tế", value: forecasts.length.toLocaleString("vi-VN") },
         { label: "Sai số MAE", value: errors.length ? `${formatNumber(average(errors), 2)} điểm` : "—" },
       ],
-      headers: ["Ngành", "Mã ngành", "Năm", "Dự báo MA2", "Thực tế", "Sai số tuyệt đối"],
+      headers: ["Ngành", "Mã ngành", "Phương thức", "Thang", "Năm", "Dự báo MA2", "Thực tế", "Sai số tuyệt đối"],
       rows: forecasts
         .sort((a, b) => b.target_year - a.target_year || (a.dim_program?.major_name ?? "").localeCompare(b.dim_program?.major_name ?? "", "vi"))
         .map((item) => [
           item.dim_program?.major_name ?? "—",
           item.program_id,
+          item.admission_method ?? "—",
+          item.score_scale != null ? String(item.score_scale) : "—",
           String(item.target_year),
           formatNumber(item.forecast_cutoff, 2),
           formatNumber(item.actual_cutoff, 2),
           formatNumber(item.abs_error, 2),
         ]),
-      note: "KPI tổng quan tính trung bình các abs_error không null; bảng chi tiết chỉ hiển thị tối đa 2.000 dòng.",
+      note: "Sai số tính trên thang gốc của chuỗi (đa số thang 30; một số ngành thang 40). Phương thức khác (học bạ, TSA, HSA…) xem ở trang Dự báo điểm chuẩn. Bảng chi tiết hiển thị tối đa 2.000 dòng.",
     };
   }
 
