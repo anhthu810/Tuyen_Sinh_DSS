@@ -2,6 +2,16 @@ import { createClient } from "@/lib/supabase/server";
 
 export type KpiTone = "good" | "warn" | "bad" | "neutral";
 
+export type KpiBullet = {
+  value: number;
+  max: number;
+  target: number;
+  targetLabel: string;
+  unit: string;
+  /** true nếu giá trị càng nhỏ càng tốt (ví dụ MAE K03, chi phí K06, rủi ro K07) */
+  invertRisk?: boolean;
+};
+
 export type Kpi = {
   code: string; // K01..K07
   name: string;
@@ -12,7 +22,34 @@ export type Kpi = {
   threshold: string;
   source: string;
   rawValue: number | null;
+  bullet?: KpiBullet;
   tone: KpiTone;
+};
+
+export type OutcomeBreakdown = {
+  total: number;
+  nv1Count: number;
+  nv23Count: number;
+  nv4PlusCount: number;
+  rejectedCount: number;
+  nv1Pct: number;
+  nv23Pct: number;
+  nv4PlusPct: number;
+  rejectedPct: number;
+};
+
+export type UniCostMatrixRow = {
+  universityCode: string;
+  university: string;
+  cnttCostM: number | null;
+  cnttCutoff: number | null;
+  otherCostM: number | null;
+  otherCutoff: number | null;
+};
+
+export type ExecutiveChartData = {
+  outcomes: OutcomeBreakdown;
+  matrix: UniCostMatrixRow[];
 };
 
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
@@ -128,6 +165,10 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       threshold: "≥ 65% Tốt · 50–64% Lưu ý · < 50% Rủi ro cao",
       source: "dim_student (500 HS mô phỏng)",
       rawValue: k01,
+      bullet:
+        k01 != null
+          ? { value: k01, max: 100, target: 70, targetLabel: "Mục tiêu 70%", unit: "%" }
+          : undefined,
       tone: k01 == null ? "neutral" : k01 >= 65 ? "good" : k01 >= 50 ? "warn" : "bad",
     },
     {
@@ -140,6 +181,10 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       threshold: "≥ 35% Lợi thế rõ rệt",
       source: "main_dataset (score_eligible > 0)",
       rawValue: k02,
+      bullet:
+        k02 != null
+          ? { value: k02, max: 100, target: 35, targetLabel: "Ngưỡng 35%", unit: "%" }
+          : undefined,
       tone: k02 == null ? "neutral" : k02 >= 35 ? "good" : "neutral",
     },
     {
@@ -152,6 +197,17 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       threshold: "≤ 1,5đ Tin cậy cao · 1,5–2,5đ Trung bình · > 2,5đ Thấp",
       source: "fact_cutoff_forecast (MA2)",
       rawValue: k03,
+      bullet:
+        k03 != null
+          ? {
+              value: k03,
+              max: 3.0,
+              target: 1.5,
+              targetLabel: "Trần 1,5đ",
+              unit: "đ",
+              invertRisk: true,
+            }
+          : undefined,
       tone: k03 == null ? "neutral" : k03 <= 1.5 ? "good" : k03 <= 2.5 ? "warn" : "bad",
     },
     {
@@ -176,6 +232,10 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       threshold: "≥ 90% Ổn định · 80–89% Trung bình · < 80% Rủi ro",
       source: "fact_employment (34 bản ghi)",
       rawValue: k05,
+      bullet:
+        k05 != null
+          ? { value: k05, max: 100, target: 90, targetLabel: "Ổn định 90%", unit: "%" }
+          : undefined,
       tone: k05 == null ? "neutral" : k05 >= 90 ? "good" : k05 >= 80 ? "warn" : "bad",
     },
     {
@@ -185,9 +245,20 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       display: vnd,
       meaning: "Số tiền gia đình cần chuẩn bị cho toàn khóa (bình quân NV trúng tuyển).",
       formula: "AVG(Σ Học_phí_năm + (Sinh_hoạt − Hỗ_trợ) × Số_năm)",
-      threshold: "Đối chiếu với tổng ngân sách gia đình (K07 ≤ 100%)",
+      threshold: "Đối chiếu với tổng ngân sách gia đình (ngưỡng 300 triệu ₫)",
       source: "main_dataset (is_admitted = true)",
       rawValue: k06,
+      bullet:
+        k06 != null
+          ? {
+              value: Math.round(k06 / 1_000_000),
+              max: 500,
+              target: 300,
+              targetLabel: "Ngưỡng 300tr",
+              unit: "tr",
+              invertRisk: true,
+            }
+          : undefined,
       tone: "neutral",
     },
     {
@@ -197,10 +268,145 @@ export async function getOverviewKpis(): Promise<Kpi[]> {
       display: pct(k07),
       meaning: "> 100% chi phí/ngân sách → cần học bổng, tín dụng, hoặc ngành học phí thấp hơn.",
       formula: "COUNT(HS đỗ có Tổng_chi_phí / Tổng_ngân_sách > 100%) / COUNT(HS đỗ) × 100%",
-      threshold: "≤ 30% An toàn · 31–50% Lưu ý · > 50% Báo động",
+      threshold: "≤ 30% An toàn · 31–50% Lưu ý · > 50% Báo động đỏ",
       source: "main_dataset (is_admitted = true)",
       rawValue: k07,
+      bullet:
+        k07 != null
+          ? {
+              value: k07,
+              max: 100,
+              target: 50,
+              targetLabel: "Báo động 50%",
+              unit: "%",
+              invertRisk: true,
+            }
+          : undefined,
       tone: k07 == null ? "neutral" : k07 <= 30 ? "good" : k07 <= 50 ? "warn" : "bad",
     },
   ];
+}
+
+/**
+ * Tải dữ liệu cho 2 biểu đồ chuyên sâu ở Trang 1 (Executive Overview):
+ * (1) Phân bổ kết quả trúng tuyển 500 HS; (2) Ma trận Điểm chuẩn & Học phí 7 trường (CNTT vs Ngành khác).
+ */
+export async function getExecutiveChartData(): Promise<ExecutiveChartData> {
+  const sb = await createClient();
+
+  const [studentsRes, unisRes] = await Promise.all([
+    sb
+      .from("dim_student")
+      .select("admission_status, admitted_nv_order")
+      .limit(1000),
+    sb
+      .from("dim_university")
+      .select("university_code, short_name")
+      .order("university_code"),
+  ]);
+
+  const students = (studentsRes.data ?? []) as {
+    admission_status: string;
+    admitted_nv_order: number | null;
+  }[];
+
+  let nv1Count = 0;
+  let nv23Count = 0;
+  let nv4PlusCount = 0;
+  let rejectedCount = 0;
+
+  for (const s of students) {
+    if (s.admission_status === "Trúng tuyển" && s.admitted_nv_order != null) {
+      if (s.admitted_nv_order === 1) nv1Count++;
+      else if (s.admitted_nv_order <= 3) nv23Count++;
+      else nv4PlusCount++;
+    } else {
+      rejectedCount++;
+    }
+  }
+
+  const total = students.length;
+  const pctOf = (c: number) => (total > 0 ? Number(((c / total) * 100).toFixed(1)) : 0);
+
+  // Phân trang lấy toàn bộ main_dataset để tính ma trận Điểm chuẩn & Chi phí 7 trường
+  type AppCostRow = {
+    university_code: string;
+    industry_group: string | null;
+    ref_cutoff_30: number | null;
+    est_total_cost_vnd: number | null;
+  };
+  const apps: AppCostRow[] = [];
+  let from = 0;
+  const PAGE = 1000;
+  while (true) {
+    const { data, error } = await sb
+      .from("main_dataset")
+      .select("university_code, industry_group, ref_cutoff_30, est_total_cost_vnd")
+      .range(from, from + PAGE - 1);
+    if (error || !data?.length) break;
+    apps.push(...(data as AppCostRow[]));
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+
+  const uniBuckets = new Map<
+    string,
+    {
+      cnttCosts: number[];
+      cnttCutoffs: number[];
+      otherCosts: number[];
+      otherCutoffs: number[];
+    }
+  >();
+
+  for (const r of apps) {
+    const bucket = uniBuckets.get(r.university_code) ?? {
+      cnttCosts: [],
+      cnttCutoffs: [],
+      otherCosts: [],
+      otherCutoffs: [],
+    };
+    const isCntt = (r.industry_group ?? "").toUpperCase().includes("CNTT");
+    if (isCntt) {
+      if (r.est_total_cost_vnd != null) bucket.cnttCosts.push(r.est_total_cost_vnd);
+      if (r.ref_cutoff_30 != null) bucket.cnttCutoffs.push(r.ref_cutoff_30);
+    } else {
+      if (r.est_total_cost_vnd != null) bucket.otherCosts.push(r.est_total_cost_vnd);
+      if (r.ref_cutoff_30 != null) bucket.otherCutoffs.push(r.ref_cutoff_30);
+    }
+    uniBuckets.set(r.university_code, bucket);
+  }
+
+  const unis = (unisRes.data ?? []) as { university_code: string; short_name: string | null }[];
+  const matrix: UniCostMatrixRow[] = unis.map((u) => {
+    const b = uniBuckets.get(u.university_code);
+    const avgCostM = (xs: number[]) =>
+      xs.length ? Math.round(xs.reduce((a, v) => a + v, 0) / xs.length / 1_000_000) : null;
+    const avgCut = (xs: number[]) =>
+      xs.length ? Number((xs.reduce((a, v) => a + v, 0) / xs.length).toFixed(2)) : null;
+
+    return {
+      universityCode: u.university_code,
+      university: u.short_name ?? u.university_code,
+      cnttCostM: b ? avgCostM(b.cnttCosts) : null,
+      cnttCutoff: b ? avgCut(b.cnttCutoffs) : null,
+      otherCostM: b ? avgCostM(b.otherCosts) : null,
+      otherCutoff: b ? avgCut(b.otherCutoffs) : null,
+    };
+  });
+
+  return {
+    outcomes: {
+      total,
+      nv1Count,
+      nv23Count,
+      nv4PlusCount,
+      rejectedCount,
+      nv1Pct: pctOf(nv1Count),
+      nv23Pct: pctOf(nv23Count),
+      nv4PlusPct: pctOf(nv4PlusCount),
+      rejectedPct: pctOf(rejectedCount),
+    },
+    matrix,
+  };
 }
