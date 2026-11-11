@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { PageHeader } from "@/components/page-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { loadWhatIfDataset } from "@/lib/queries/what-if";
@@ -7,15 +6,12 @@ import { WhatIfSimulator } from "./_components/what-if-simulator";
 
 export default function WhatIfPage() {
   return (
-    <div>
-      <PageHeader
-        title="Phân tích kịch bản (What-if)"
-        description="Nếu thay đổi điểm bài thi phụ, điểm chuẩn hoặc ngân sách gia đình thì tỷ lệ đỗ NV1–NV3 (K01) và áp lực tài chính (K07) sẽ thay đổi thế nào?"
-        badge="Dữ liệu trực tiếp từ Supabase"
-      />
-      <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
-        <WhatIfContent />
-      </Suspense>
+    <div className="-mx-5 -my-6 min-h-screen bg-[#f6f5f1] px-5 py-6 md:-mx-8 md:-my-8 md:px-8 md:py-8">
+      <div className="mx-auto max-w-6xl space-y-5">
+        <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
+          <WhatIfContent />
+        </Suspense>
+      </div>
     </div>
   );
 }
@@ -32,4 +28,3 @@ async function WhatIfContent() {
   }
   return <WhatIfSimulator dataset={dataset} />;
 }
-

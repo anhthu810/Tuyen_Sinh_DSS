@@ -19,6 +19,7 @@ type RawAppRow = {
   university_code: string;
   best_method: string | null;
   best_margin_30: number | null;
+  ref_cutoff_30: number | null;
   is_eligible: boolean | null;
   est_total_cost_vnd: number | null;
   family_budget_vnd_year: number | null;
@@ -37,7 +38,7 @@ async function fetchAllApplications(): Promise<RawAppRow[]> {
     const { data, error } = await sb
       .from("main_dataset")
       .select(
-        "student_id, nv_order, university_code, best_method, best_margin_30, is_eligible, est_total_cost_vnd, family_budget_vnd_year, duration_years, affordability_index_pct",
+        "student_id, nv_order, university_code, best_method, best_margin_30, ref_cutoff_30, is_eligible, est_total_cost_vnd, family_budget_vnd_year, duration_years, affordability_index_pct",
       )
       .order("student_id")
       .order("nv_order")
@@ -79,6 +80,7 @@ export async function loadWhatIfDataset(): Promise<WhatIfDataset> {
       university_code: r.university_code,
       best_method: r.best_method,
       best_margin_30: r.best_margin_30,
+      ref_cutoff_30: r.ref_cutoff_30,
       is_eligible: Boolean(r.is_eligible),
       est_total_cost_vnd: r.est_total_cost_vnd,
       family_budget_vnd_year: r.family_budget_vnd_year,

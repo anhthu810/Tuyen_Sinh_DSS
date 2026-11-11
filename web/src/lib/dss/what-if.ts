@@ -4,6 +4,7 @@ export type WhatIfParams = {
   scoreBonus: number;
   cutoffDelta: number;
   cutoffScope: CutoffScope;
+  affectedUniversities?: string[];
   quotaDeltaPct: number;
   budgetDeltaPct: number;
   costDeltaPct: number;
@@ -23,6 +24,7 @@ export type WhatIfApplication = {
   university_code: string;
   best_method: string | null;
   best_margin_30: number | null;
+  ref_cutoff_30?: number | null;
   is_eligible: boolean;
   est_total_cost_vnd: number | null;
   family_budget_vnd_year: number | null;
@@ -188,8 +190,11 @@ const SCOPE_CODES: Record<CutoffScope, Set<string> | null> = {
   all: null,
 };
 
-function cutoffApplies(universityCode: string, scope: CutoffScope): boolean {
-  const set = SCOPE_CODES[scope];
+function cutoffApplies(universityCode: string, params: WhatIfParams): boolean {
+  if (params.affectedUniversities) {
+    return params.affectedUniversities.includes(universityCode);
+  }
+  const set = SCOPE_CODES[params.cutoffScope];
   return set === null ? true : set.has(universityCode);
 }
 
@@ -201,7 +206,7 @@ function isApplicationEligible(
   if (!student.is_thpt_graduated) return false;
   if (app.best_margin_30 == null) return app.is_eligible;
 
-  const applies = cutoffApplies(app.university_code, params.cutoffScope);
+  const applies = cutoffApplies(app.university_code, params);
   const cutoffShift = applies ? params.cutoffDelta : 0;
   // Giả định độ co giãn chỉ tiêu: giảm 10% chỉ tiêu tạo áp lực tăng +0,25đ điểm chuẩn
   const quotaPressure = applies ? -(params.quotaDeltaPct / 10) * 0.25 : 0;
@@ -235,6 +240,22 @@ function isApplicationOverBudget(
   }
 
   return { evaluated: false, overBudget: false, adjustedCost: null };
+}
+
+export function computeBaselineAvgScore(dataset: WhatIfDataset): number {
+  let sum = 0;
+  let count = 0;
+  for (const s of dataset.students) {
+    for (const app of s.applications) {
+      if (app.ref_cutoff_30 != null && app.best_margin_30 != null) {
+        const implied = Math.max(0, Math.min(30, app.ref_cutoff_30 + app.best_margin_30));
+        sum += implied;
+        count += 1;
+      }
+    }
+  }
+  if (!count) return 24.5;
+  return Math.round((sum / count) * 4) / 4;
 }
 
 /**

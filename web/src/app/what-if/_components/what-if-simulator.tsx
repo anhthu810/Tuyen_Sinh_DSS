@@ -1,110 +1,174 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, RotateCcw } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { AlertTriangle, ArrowRight, GitBranch } from "lucide-react";
+import { FormulaTooltip } from "@/components/dss/formula-tooltip";
 import { formatPct, formatVndShort } from "@/lib/format";
+import { buildWhatIfInsights, type CoreInsightTone } from "@/lib/dss/insights";
 import {
   BASELINE_PARAMS,
   WHAT_IF_PRESETS,
   buildSensitivitySeries,
+  computeBaselineAvgScore,
   simulateWhatIf,
   type CutoffScope,
   type WhatIfDataset,
   type WhatIfParams,
 } from "@/lib/dss/what-if";
+import { cn } from "@/lib/utils";
 import { WhatIfCharts } from "./what-if-charts";
-import {
-  CoreInsightsCallout,
-  IfThenRulesCard,
-} from "@/components/dss/core-insights-callout";
-import { FormulaTooltip } from "@/components/dss/formula-tooltip";
-import { buildWhatIfInsights } from "@/lib/dss/insights";
 
-const SCOPE_LABELS: Record<CutoffScope, string> = {
-  hust_neu: "HUST (BKA) & NEU (KHA)",
-  top1: "Nhóm Top 1 (BKA, KHA, YHB)",
-  all: "Tất cả 7 trường",
+const ALL_UNIS = [
+  { code: "BKA", short: "HUST" },
+  { code: "KHA", short: "NEU" },
+  { code: "YHB", short: "HMU" },
+  { code: "SPH", short: "HNUE" },
+  { code: "DCN", short: "HaUI" },
+  { code: "TLA", short: "TLU" },
+  { code: "HVN", short: "VNUA" },
+];
+
+const SCOPE_TO_UNIS: Record<CutoffScope, string[]> = {
+  hust_neu: ["BKA", "KHA"],
+  top1: ["BKA", "KHA", "YHB"],
+  all: ALL_UNIS.map((u) => u.code),
+};
+
+const SOFT_BADGE: Record<CoreInsightTone, string> = {
+  success: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  warning: "border-amber-200 bg-amber-50 text-amber-700",
+  danger: "border-rose-200 bg-rose-50 text-rose-700",
+  neutral: "border-slate-200 bg-slate-100 text-slate-700",
 };
 
 function fmtSigned(n: number, suffix = "", digits = 1): string {
   const rounded = Number(n.toFixed(digits));
   if (rounded === 0) return `0${suffix}`;
-  const str = digits === 0 ? String(Math.round(rounded)) : rounded.toFixed(digits).replace(".", ",");
+  const str =
+    digits === 0 ? String(Math.round(rounded)) : rounded.toFixed(digits).replace(".", ",");
   return `${rounded > 0 ? "+" : ""}${str}${suffix}`;
 }
 
-function detectPresetId(params: WhatIfParams): string {
-  const match = WHAT_IF_PRESETS.find(
-    (p) =>
+function sameSet(a: string[], b: string[]): boolean {
+  if (a.length !== b.length) return false;
+  const setB = new Set(b);
+  return a.every((x) => setB.has(x));
+}
+
+function detectPresetId(params: WhatIfParams, checkedUnis: string[]): string {
+  const match = WHAT_IF_PRESETS.find((p) => {
+    const presetUnis = p.params.cutoffDelta === 0 ? [] : SCOPE_TO_UNIS[p.params.cutoffScope];
+    return (
       p.params.scoreBonus === params.scoreBonus &&
       p.params.cutoffDelta === params.cutoffDelta &&
-      p.params.cutoffScope === params.cutoffScope &&
-      p.params.quotaDeltaPct === params.quotaDeltaPct &&
       p.params.budgetDeltaPct === params.budgetDeltaPct &&
-      p.params.costDeltaPct === params.costDeltaPct,
-  );
+      p.params.costDeltaPct === params.costDeltaPct &&
+      sameSet(checkedUnis, presetUnis)
+    );
+  });
   return match?.id ?? "custom";
 }
 
 export function WhatIfSimulator({ dataset }: { dataset: WhatIfDataset }) {
+  const baseAvgScore = useMemo(() => computeBaselineAvgScore(dataset), [dataset]);
+  const [examScore, setExamScore] = useState<number>(baseAvgScore);
+  const [hasExtraExam, setHasExtraExam] = useState<boolean>(false);
+  const [extraBonus, setExtraBonus] = useState<number>(1.0);
+  const [checkedUnis, setCheckedUnis] = useState<string[]>([]);
   const [params, setParams] = useState<WhatIfParams>({
     ...BASELINE_PARAMS,
+    affectedUniversities: [],
     cohortYear: "all",
   });
 
-  const cohorts = useMemo(
-    () => Array.from(new Set(dataset.students.map((s) => s.cohort_year))).sort((a, b) => a - b),
-    [dataset.students],
+  const effectiveScoreBonus =
+    Number((examScore - baseAvgScore).toFixed(2)) + (hasExtraExam ? extraBonus : 0);
+
+  const effectiveParams: WhatIfParams = useMemo(
+    () => ({
+      ...params,
+      scoreBonus: effectiveScoreBonus,
+      affectedUniversities: checkedUnis,
+    }),
+    [params, effectiveScoreBonus, checkedUnis],
   );
 
   const baseline = useMemo(
-    () => simulateWhatIf(dataset, { ...BASELINE_PARAMS, cohortYear: params.cohortYear }),
+    () =>
+      simulateWhatIf(dataset, {
+        ...BASELINE_PARAMS,
+        affectedUniversities: [],
+        cohortYear: params.cohortYear,
+      }),
     [dataset, params.cohortYear],
   );
 
-  const scenario = useMemo(() => simulateWhatIf(dataset, params), [dataset, params]);
-
-  const { scoreCurve, budgetCurve } = useMemo(
-    () => buildSensitivitySeries(dataset, params),
-    [dataset, params],
+  const scenario = useMemo(
+    () => simulateWhatIf(dataset, effectiveParams),
+    [dataset, effectiveParams],
   );
 
-  const presetId = detectPresetId(params);
-  const activePreset = WHAT_IF_PRESETS.find((p) => p.id === presetId) ?? null;
+  const { scoreCurve, budgetCurve } = useMemo(
+    () => buildSensitivitySeries(dataset, effectiveParams),
+    [dataset, effectiveParams],
+  );
 
-  // Cảnh báo giống mẫu Canteen: vượt phạm vi giả định hoặc chạm ngưỡng báo động KPI
+  const presetId = detectPresetId(effectiveParams, checkedUnis);
+
+  const whatIfInsights = useMemo(
+    () => buildWhatIfInsights({ params: effectiveParams, baseline, scenario }),
+    [effectiveParams, baseline, scenario],
+  );
+
+  function applyPreset(id: string) {
+    const found = WHAT_IF_PRESETS.find((p) => p.id === id);
+    if (!found) return;
+    const unis = found.params.cutoffDelta === 0 ? [] : SCOPE_TO_UNIS[found.params.cutoffScope];
+    setCheckedUnis(unis);
+    setExamScore(baseAvgScore);
+    if (found.params.scoreBonus > 0) {
+      setHasExtraExam(true);
+      setExtraBonus(Math.min(1.5, Math.max(0.5, found.params.scoreBonus)));
+    } else {
+      setHasExtraExam(false);
+      setExtraBonus(1.0);
+    }
+    setParams((prev) => ({
+      ...found.params,
+      affectedUniversities: unis,
+      cohortYear: prev.cohortYear,
+    }));
+  }
+
+  function toggleUni(code: string) {
+    setCheckedUnis((prev) => {
+      const exists = prev.includes(code);
+      const next = exists ? prev.filter((c) => c !== code) : [...prev, code];
+      const nextDelta = next.length === 0 ? 0 : params.cutoffDelta === 0 ? 1.0 : params.cutoffDelta;
+      setParams((p) => ({ ...p, cutoffDelta: nextDelta, affectedUniversities: next }));
+      return next;
+    });
+  }
+
   const warnings: string[] = [];
-  if (Math.abs(params.scoreBonus) > 2.0) {
+  if (Math.abs(examScore - baseAvgScore) > 3.0) {
     warnings.push(
-      `Biến động điểm xét tuyển (${fmtSigned(params.scoreBonus, "đ", 2)}) nằm ngoài phạm vi hợp lệ (±2,0đ). Kết quả chỉ mang tính tham khảo.`,
+      `⚠ Điểm thi giả lập (${examScore.toFixed(2).replace(".", ",")}đ) lệch ${fmtSigned(examScore - baseAvgScore, "đ", 2)} so với trung bình mẫu (${baseAvgScore.toFixed(2).replace(".", ",")}đ).`,
     );
   }
-  if (Math.abs(params.cutoffDelta) > 2.0) {
+  if (Math.abs(params.cutoffDelta) > 2.0 && checkedUnis.length > 0) {
     warnings.push(
-      `Biến động điểm chuẩn (${fmtSigned(params.cutoffDelta, "đ", 2)}) nằm ngoài phạm vi giả định thông thường (±2,0đ).`,
-    );
-  }
-  if (Math.abs(params.quotaDeltaPct) > 15) {
-    warnings.push(
-      `Biến động chỉ tiêu (${fmtSigned(params.quotaDeltaPct, "%", 0)}) vượt ngưỡng ±15%; áp lực quy đổi lên điểm chuẩn chỉ mang tính tham khảo.`,
+      `⚠ Δ điểm chuẩn (${fmtSigned(params.cutoffDelta, "đ", 2)}) vượt ngưỡng giả định thông thường (±2,0đ).`,
     );
   }
   if (params.budgetDeltaPct < -25 || params.costDeltaPct > 20) {
     warnings.push(
-      `Biến động tài chính (ngân sách ${fmtSigned(params.budgetDeltaPct, "%", 0)}, chi phí ${fmtSigned(params.costDeltaPct, "%", 0)}) vượt ngưỡng giả định ổn định.`,
+      `⚠ Biến động tài chính (ngân sách ${fmtSigned(params.budgetDeltaPct, "%", 0)}, học phí ${fmtSigned(params.costDeltaPct, "%", 0)}) ngoài vùng ổn định.`,
     );
   }
   if (scenario.k07Pct != null && scenario.k07Pct > 50) {
     warnings.push(
-      `Cảnh báo tài chính: K07 đạt ${formatPct(scenario.k07Pct)} (vượt ngưỡng báo động 50% HS trúng tuyển vượt ngân sách).`,
-    );
-  }
-  if (scenario.k01Pct < 55) {
-    warnings.push(
-      `Cảnh báo nguyện vọng: K01 giảm còn ${formatPct(scenario.k01Pct)} (< 55%) — cần bổ sung nguyện vọng an toàn hoặc thi thêm chứng chỉ.`,
+      `⚠ K07 đạt ${formatPct(scenario.k07Pct)} — vượt ngưỡng báo động 50% HS trúng tuyển quá tải ngân sách.`,
     );
   }
 
@@ -120,442 +184,351 @@ export function WhatIfSimulator({ dataset }: { dataset: WhatIfDataset }) {
       ? scenario.k06AvgCostVnd - baseline.k06AvgCostVnd
       : null;
 
+  const baseUniMap = new Map(baseline.byUniversity.map((u) => [u.university_code, u]));
+  const scenUniMap = new Map(scenario.byUniversity.map((u) => [u.university_code, u]));
+
   const tiles = [
     {
       label: "K01 · Đỗ NV1–NV3",
       value: formatPct(scenario.k01Pct),
-      sub: `${scenario.admittedTop3Count}/${scenario.totalStudents} HS · ${fmtSigned(k01Diff, "%")} vs cơ sở`,
-      formula: "COUNT(HS có NV_đỗ_đầu_tiên ≤ 3) / COUNT(Tổng HS) × 100%",
-      threshold: "≥ 65% Tốt · 55–64% Lưu ý · < 55% Rủi ro cao",
+      sub: `Cơ sở: ${formatPct(baseline.k01Pct)} (${fmtSigned(k01Diff, "%")})`,
+      formula: "COUNT(HS đỗ NV ≤ 3) / COUNT(Tổng HS) × 100%",
+      threshold: "≥ 65% Tốt · 55–64% Lưu ý · < 55% Rủi ro",
       border:
         scenario.k01Pct >= 65
-          ? "border-l-4 border-l-success"
+          ? "border-l-4 border-l-emerald-600"
           : scenario.k01Pct >= 55
-            ? "border-l-4 border-l-warning"
-            : "border-l-4 border-l-danger",
+            ? "border-l-4 border-l-amber-500"
+            : "border-l-4 border-l-rose-600",
     },
     {
       label: "Đỗ đúng NV1",
       value: formatPct(scenario.nv1Pct),
-      sub: `${scenario.admittedNv1Count}/${scenario.totalStudents} HS · ${fmtSigned(nv1Diff, "%")} vs cơ sở`,
-      formula: "COUNT(HS đỗ ngay tại NV1) / COUNT(Tổng HS) × 100%",
-      threshold: "Phản ánh mức khớp nguyện vọng ưu tiên cao nhất",
+      sub: `${scenario.admittedNv1Count}/${scenario.totalStudents} HS (${fmtSigned(nv1Diff, "%")})`,
+      formula: "COUNT(HS đỗ NV1) / COUNT(Tổng HS) × 100%",
+      threshold: "Tỷ lệ đỗ nguyện vọng ưu tiên 1",
       border:
         nv1Diff > 0
-          ? "border-l-4 border-l-success"
+          ? "border-l-4 border-l-emerald-600"
           : nv1Diff < 0
-            ? "border-l-4 border-l-warning"
-            : "border-l-4 border-l-border",
+            ? "border-l-4 border-l-amber-500"
+            : "border-l-4 border-l-slate-300",
     },
     {
       label: "Trúng tuyển chung",
       value: formatPct(scenario.admittedTotalPct),
-      sub: `${scenario.admittedTotalCount}/${scenario.totalStudents} HS (${scenario.admittedFallbackCount} nhờ NV4+) · ${fmtSigned(totalAdmDiff, "%")}`,
-      formula: "COUNT(HS có ít nhất 1 NV đủ điểm) / COUNT(Tổng HS) × 100%",
-      threshold: "≥ 88% Bảo toàn suất đỗ nhờ đệm NV lót",
+      sub: `${scenario.admittedTotalCount}/${scenario.totalStudents} HS (${scenario.admittedFallbackCount} nhờ NV4+)`,
+      formula: "COUNT(HS đỗ ít nhất 1 NV) / COUNT(Tổng HS)",
+      threshold: "≥ 88% An toàn nhờ NV lót",
       border:
         scenario.admittedTotalPct >= 88
-          ? "border-l-4 border-l-success"
-          : "border-l-4 border-l-warning",
+          ? "border-l-4 border-l-emerald-600"
+          : "border-l-4 border-l-amber-500",
     },
     {
       label: "K07 · Vượt ngân sách",
       value: formatPct(scenario.k07Pct),
-      sub: `${scenario.overBudgetCount}/${scenario.costEvaluatedCount} HS đỗ · ${k07Diff != null ? fmtSigned(k07Diff, "%") : "—"} vs cơ sở`,
-      formula: "COUNT(HS đỗ có Chi_phí_mới > Ngân_sách_mới × Số_năm) / COUNT(HS đỗ) × 100%",
-      threshold: "≤ 35% An toàn · 36–50% Lưu ý · > 50% Báo động",
+      sub: `${scenario.overBudgetCount}/${scenario.costEvaluatedCount} HS đỗ (${k07Diff != null ? fmtSigned(k07Diff, "%") : "0%"})`,
+      formula: "COUNT(HS đỗ Chi_phí > Ngân_sách × Năm) / HS đỗ",
+      threshold: "≤ 35% An toàn · > 50% Báo động",
       border:
         scenario.k07Pct == null
-          ? "border-l-4 border-l-border"
+          ? "border-l-4 border-l-slate-300"
           : scenario.k07Pct <= 35
-            ? "border-l-4 border-l-success"
+            ? "border-l-4 border-l-emerald-600"
             : scenario.k07Pct <= 50
-              ? "border-l-4 border-l-warning"
-              : "border-l-4 border-l-danger",
+              ? "border-l-4 border-l-amber-500"
+              : "border-l-4 border-l-rose-600",
     },
     {
-      label: "K06 · Chi phí TB toàn khóa",
+      label: "K06 · Chi phí TB khóa",
       value: formatVndShort(scenario.k06AvgCostVnd),
       sub:
         k06Diff != null && Math.abs(k06Diff) >= 500_000
           ? `${k06Diff > 0 ? "+" : "−"}${formatVndShort(Math.abs(k06Diff))} vs cơ sở`
           : "Không đổi so với cơ sở",
-      formula: "AVG(est_total_cost_vnd × (1 + Δchi_phí)) trên tập HS đỗ",
-      threshold: "Đối chiếu với tổng ngân sách 4 năm của gia đình",
-      border: "border-l-4 border-l-border",
+      formula: "AVG(est_total_cost_vnd × (1 + Δchi_phí))",
+      threshold: "Chi phí bình quân trên tập HS trúng tuyển",
+      border: "border-l-4 border-l-slate-300",
     },
   ];
 
-  const comparisonRows = [
-    {
-      metric: "K01 · Tỷ lệ đỗ nhóm mục tiêu (NV1–NV3)",
-      scen: `${formatPct(scenario.k01Pct)} (${scenario.admittedTop3Count} HS)`,
-      base: `${formatPct(baseline.k01Pct)} (${baseline.admittedTop3Count} HS)`,
-      diff: `${fmtSigned(k01Diff, "%")} (${fmtSigned(scenario.admittedTop3Count - baseline.admittedTop3Count, " HS", 0)})`,
-      tone: k01Diff > 0 ? "success" : k01Diff < 0 ? "danger" : "neutral",
-      note: k01Diff > 0 ? "Mở rộng cơ hội NV mục tiêu" : k01Diff < 0 ? "Bị đẩy xuống NV lót" : "Như cơ sở",
-    },
-    {
-      metric: "Đỗ đúng NV1",
-      scen: `${formatPct(scenario.nv1Pct)} (${scenario.admittedNv1Count} HS)`,
-      base: `${formatPct(baseline.nv1Pct)} (${baseline.admittedNv1Count} HS)`,
-      diff: `${fmtSigned(nv1Diff, "%")} (${fmtSigned(scenario.admittedNv1Count - baseline.admittedNv1Count, " HS", 0)})`,
-      tone: nv1Diff > 0 ? "success" : nv1Diff < 0 ? "warning" : "neutral",
-      note: "Ưu tiên cao nhất của thí sinh",
-    },
-    {
-      metric: "Đỗ NV lót (NV4 trở đi)",
-      scen: `${formatPct(scenario.fallbackPct)} (${scenario.admittedFallbackCount} HS)`,
-      base: `${formatPct(baseline.fallbackPct)} (${baseline.admittedFallbackCount} HS)`,
-      diff: `${fmtSigned(scenario.fallbackPct - baseline.fallbackPct, "%")} (${fmtSigned(scenario.admittedFallbackCount - baseline.admittedFallbackCount, " HS", 0)})`,
-      tone: "neutral",
-      note: "Đệm an toàn khi trượt NV1–NV3",
-    },
-    {
-      metric: "Trúng tuyển chung (mọi NV)",
-      scen: `${formatPct(scenario.admittedTotalPct)} (${scenario.admittedTotalCount} HS)`,
-      base: `${formatPct(baseline.admittedTotalPct)} (${baseline.admittedTotalCount} HS)`,
-      diff: `${fmtSigned(totalAdmDiff, "%")} (${fmtSigned(scenario.admittedTotalCount - baseline.admittedTotalCount, " HS", 0)})`,
-      tone: totalAdmDiff >= 0 ? "success" : "warning",
-      note: scenario.admittedTotalPct >= 88 ? "Giữ được suất đỗ an toàn" : "Rủi ro trượt toàn bộ tăng",
-    },
-    {
-      metric: "K07 · HS trúng tuyển vượt ngân sách",
-      scen: `${formatPct(scenario.k07Pct)} (${scenario.overBudgetCount}/${scenario.costEvaluatedCount} HS)`,
-      base: `${formatPct(baseline.k07Pct)} (${baseline.overBudgetCount}/${baseline.costEvaluatedCount} HS)`,
-      diff:
-        k07Diff != null
-          ? `${fmtSigned(k07Diff, "%")} (${fmtSigned(scenario.overBudgetCount - baseline.overBudgetCount, " HS", 0)})`
-          : "—",
-      tone:
-        k07Diff == null || k07Diff === 0
-          ? "neutral"
-          : k07Diff > 0
-            ? (scenario.k07Pct ?? 0) > 50
-              ? "danger"
-              : "warning"
-            : "success",
-      note:
-        (scenario.k07Pct ?? 0) > 50
-          ? "Vượt ngưỡng báo động 50%"
-          : "Cần K07 < 100% chi phí/ngân sách ở từng NV",
-    },
-    {
-      metric: "K06 · Chi phí toàn khóa trung bình",
-      scen: formatVndShort(scenario.k06AvgCostVnd),
-      base: formatVndShort(baseline.k06AvgCostVnd),
-      diff:
-        k06Diff != null && Math.abs(k06Diff) >= 500_000
-          ? `${k06Diff > 0 ? "+" : "−"}${formatVndShort(Math.abs(k06Diff))}`
-          : "0 ₫",
-      tone: k06Diff != null && k06Diff > 0 ? "warning" : "neutral",
-      note: "Tính trên tập HS trúng tuyển",
-    },
-  ] as const;
-
-  const baseUniMap = new Map(baseline.byUniversity.map((u) => [u.university_code, u]));
-
-  // 3 kịch bản chuẩn (Bước 4) tính trực tiếp trên cohort hiện tại
-  const canonicalScenarios = useMemo(() => {
-    return WHAT_IF_PRESETS.slice(1, 4).map((p) => ({
-      preset: p,
-      result: simulateWhatIf(dataset, { ...p.params, cohortYear: params.cohortYear }),
-    }));
-  }, [dataset, params.cohortYear]);
-
-  const whatIfInsights = useMemo(
-    () => buildWhatIfInsights({ params, baseline, scenario }),
-    [params, baseline, scenario],
-  );
-
-  const topUni = [...scenario.byUniversity].sort(
-    (a, b) => b.admittedCount - a.admittedCount,
-  )[0];
-
-  function applyPreset(id: string) {
-    const found = WHAT_IF_PRESETS.find((p) => p.id === id);
-    if (!found) return;
-    setParams((prev) => ({ ...found.params, cohortYear: prev.cohortYear }));
-  }
-
-  function resetToBase() {
-    setParams((prev) => ({ ...BASELINE_PARAMS, cohortYear: prev.cohortYear }));
-  }
-
   return (
     <div className="space-y-6">
-      {/* 0. Insight & Khuyến nghị cốt lõi ngay đầu trang */}
-      <CoreInsightsCallout
-        points={whatIfInsights.points}
-        subtitle={activePreset ? activePreset.label : "Kịch bản tùy chỉnh"}
-      />
+      {/* CARD CHÍNH: MẪU KỊCH BẢN WHAT-IF (GIỐNG MẪU CANTEEN) */}
+      <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <span className="inline-flex size-7 items-center justify-center rounded-full bg-[#1f5f8b] text-sm font-bold text-white">
+            4
+          </span>
+          <h2 className="text-xl font-bold tracking-tight text-slate-900">Kịch bản What-if</h2>
+          <span className="rounded-full bg-[#e3eef6] px-2.5 py-0.5 text-xs font-semibold text-[#1f5f8b]">
+            Ch4 · Ch5
+          </span>
+        </div>
+        <p className="mt-1 text-sm text-slate-500">
+          Thay đổi giả định để xem khuyến nghị thay đổi thế nào. Kết quả cập nhật cả dashboard bên
+          dưới.
+        </p>
 
-      {/* 1. Bộ điều khiển What-if (giống #s8 mẫu Canteen) */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <CardTitle className="text-base">Thiết lập kịch bản What-if</CardTitle>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Chọn kịch bản có sẵn hoặc kéo thanh trượt để thay đổi giả định. Mọi KPI và biểu đồ
-                tính lại ngay lập tức trên {scenario.totalStudents} học sinh.
-              </p>
-            </div>
-            <Button variant="outline" size="sm" onClick={resetToBase}>
-              <RotateCcw className="size-3.5" />
-              Đặt lại cơ sở
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span className="font-medium">Kịch bản có sẵn</span>
-              <select
-                value={presetId}
-                onChange={(e) => applyPreset(e.target.value)}
-                className="h-9 rounded-md border bg-background px-2.5 text-sm"
-              >
-                {WHAT_IF_PRESETS.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-                {presetId === "custom" ? (
-                  <option value="custom">Tùy chỉnh theo thanh trượt</option>
-                ) : null}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span className="font-medium">Phạm vi biến động điểm chuẩn</span>
-              <select
-                value={params.cutoffScope}
-                onChange={(e) =>
-                  setParams((p) => ({ ...p, cutoffScope: e.target.value as CutoffScope }))
-                }
-                className="h-9 rounded-md border bg-background px-2.5 text-sm"
-              >
-                {Object.entries(SCOPE_LABELS).map(([k, label]) => (
-                  <option key={k} value={k}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span className="font-medium">Khóa tuyển sinh</span>
-              <select
-                value={String(params.cohortYear)}
-                onChange={(e) =>
-                  setParams((p) => ({
-                    ...p,
-                    cohortYear: e.target.value === "all" ? "all" : Number(e.target.value),
-                  }))
-                }
-                className="h-9 rounded-md border bg-background px-2.5 text-sm"
-              >
-                <option value="all">Tất cả khóa ({dataset.students.length} HS)</option>
-                {cohorts.map((y) => (
-                  <option key={y} value={y}>
-                    Khóa {y}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 border-t pt-4 sm:grid-cols-2 lg:grid-cols-5">
-            <label className="flex flex-col gap-1.5 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Δ điểm thi / bài phụ</span>
-                <span className="font-semibold tabular-nums">
-                  {fmtSigned(params.scoreBonus, "đ", 2)}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={-2}
-                max={3}
-                step={0.25}
-                value={params.scoreBonus}
-                onChange={(e) =>
-                  setParams((p) => ({ ...p, scoreBonus: Number(e.target.value) }))
-                }
-                className="accent-primary"
-              />
-              <span className="text-xs text-muted-foreground">
-                TSA / HSA / IELTS quy đổi (−2,0 → +3,0đ)
-              </span>
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Δ điểm chuẩn</span>
-                <span className="font-semibold tabular-nums">
-                  {fmtSigned(params.cutoffDelta, "đ", 2)}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={-2}
-                max={3}
-                step={0.25}
-                value={params.cutoffDelta}
-                onChange={(e) =>
-                  setParams((p) => ({ ...p, cutoffDelta: Number(e.target.value) }))
-                }
-                className="accent-primary"
-              />
-              <span className="text-xs text-muted-foreground">
-                Áp dụng: {SCOPE_LABELS[params.cutoffScope]}
-              </span>
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Δ chỉ tiêu tuyển sinh</span>
-                <span className="font-semibold tabular-nums">
-                  {fmtSigned(params.quotaDeltaPct, "%", 0)}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={-20}
-                max={20}
-                step={5}
-                value={params.quotaDeltaPct}
-                onChange={(e) =>
-                  setParams((p) => ({ ...p, quotaDeltaPct: Number(e.target.value) }))
-                }
-                className="accent-primary"
-              />
-              <span className="text-xs text-muted-foreground">
-                Giảm 10% chỉ tiêu ≈ +0,25đ cạnh tranh
-              </span>
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Δ ngân sách gia đình</span>
-                <span className="font-semibold tabular-nums">
-                  {fmtSigned(params.budgetDeltaPct, "%", 0)}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={-40}
-                max={40}
-                step={5}
-                value={params.budgetDeltaPct}
-                onChange={(e) =>
-                  setParams((p) => ({ ...p, budgetDeltaPct: Number(e.target.value) }))
-                }
-                className="accent-primary"
-              />
-              <span className="text-xs text-muted-foreground">
-                Sức chi trả/năm (−40% → +40%)
-              </span>
-            </label>
-
-            <label className="flex flex-col gap-1.5 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Δ học phí &amp; sinh hoạt</span>
-                <span className="font-semibold tabular-nums">
-                  {fmtSigned(params.costDeltaPct, "%", 0)}
-                </span>
-              </div>
-              <input
-                type="range"
-                min={-20}
-                max={30}
-                step={5}
-                value={params.costDeltaPct}
-                onChange={(e) =>
-                  setParams((p) => ({ ...p, costDeltaPct: Number(e.target.value) }))
-                }
-                className="accent-primary"
-              />
-              <span className="text-xs text-muted-foreground">
-                Tổng chi phí toàn khóa (−20% → +30%)
-              </span>
-            </label>
-          </div>
-
-          {warnings.length > 0 ? (
-            <div className="space-y-1 rounded-lg border border-danger/30 bg-danger-bg px-4 py-3 text-sm text-danger">
-              {warnings.map((msg, i) => (
-                <div key={i} className="flex items-start gap-2">
-                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                  <span>{msg}</span>
-                </div>
+        {/* Hàng điều khiển 1: Kịch bản có sẵn + Checkbox + Sliders (giống hệt bố cục Canteen) */}
+        <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3 text-sm text-slate-800">
+          <label className="flex items-center gap-2">
+            <span>Kịch bản có sẵn</span>
+            <select
+              value={presetId}
+              onChange={(e) => applyPreset(e.target.value)}
+              className="h-8 rounded-md border border-slate-300 bg-white px-2.5 text-sm text-slate-900 outline-none focus:border-[#1f5f8b]"
+            >
+              {WHAT_IF_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
               ))}
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+              {presetId === "custom" ? <option value="custom">Tùy chỉnh</option> : null}
+            </select>
+          </label>
 
-      {/* 2. 5 KPI Tiles (giống .tiles mẫu Canteen) kèm Tooltip công thức */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {tiles.map((t) => (
-          <Card key={t.label} className={t.border}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between gap-1 text-xs text-muted-foreground">
-                <span>{t.label}</span>
-                <FormulaTooltip
-                  title={t.label}
-                  formula={t.formula}
-                  threshold={t.threshold}
-                  source="500 HS · 3.096 NV"
+          <label className="flex items-center gap-2">
+            <span>Điểm thi</span>
+            <input
+              type="range"
+              min={0}
+              max={30}
+              step={0.25}
+              value={examScore}
+              onChange={(e) => setExamScore(Number(e.target.value))}
+              className="w-32 accent-[#1f5f8b]"
+            />
+            <b className="min-w-16 tabular-nums">
+              {examScore.toFixed(2).replace(".", ",")}đ
+            </b>
+          </label>
+
+          <label className="flex cursor-pointer items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={hasExtraExam}
+              onChange={(e) => setHasExtraExam(e.target.checked)}
+              className="size-4 accent-[#1f5f8b]"
+            />
+            <span>Bài thi phụ</span>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <span>Cộng bài phụ</span>
+            <input
+              type="range"
+              min={0.5}
+              max={1.5}
+              step={0.1}
+              value={extraBonus}
+              onChange={(e) => {
+                setHasExtraExam(true);
+                setExtraBonus(Number(e.target.value));
+              }}
+              className="w-24 accent-[#1f5f8b]"
+            />
+            <b className="min-w-14 tabular-nums text-slate-900">
+              {hasExtraExam ? `+${extraBonus.toFixed(1).replace(".", ",")}đ` : "0đ"}
+            </b>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <span>Δ ngân sách</span>
+            <input
+              type="range"
+              min={-40}
+              max={40}
+              step={5}
+              value={params.budgetDeltaPct}
+              onChange={(e) =>
+                setParams((p) => ({ ...p, budgetDeltaPct: Number(e.target.value) }))
+              }
+              className="w-28 accent-[#1f5f8b]"
+            />
+            <b className="min-w-11 tabular-nums">{fmtSigned(params.budgetDeltaPct, "%", 0)}</b>
+          </label>
+
+          <label className="flex items-center gap-2">
+            <span>Δ học phí</span>
+            <input
+              type="range"
+              min={-20}
+              max={30}
+              step={5}
+              value={params.costDeltaPct}
+              onChange={(e) => setParams((p) => ({ ...p, costDeltaPct: Number(e.target.value) }))}
+              className="w-24 accent-[#1f5f8b]"
+            />
+            <b className="min-w-10 tabular-nums">{fmtSigned(params.costDeltaPct, "%", 0)}</b>
+          </label>
+        </div>
+
+        {/* Hàng điều khiển 2: Checkboxes theo 7 trường (tương tự Mưa theo từng ngày trong Canteen) */}
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-700">
+          <span className="text-slate-500">Tăng điểm chuẩn +1,0đ theo trường:</span>
+          {ALL_UNIS.map((u) => {
+            const checked = checkedUnis.includes(u.code);
+            return (
+              <label key={u.code} className="flex cursor-pointer items-center gap-1.5">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => toggleUni(u.code)}
+                  className="size-4 accent-[#1f5f8b]"
                 />
-              </div>
-              <div className="mt-1 text-2xl font-bold tracking-tight tabular-nums">{t.value}</div>
-              <div className="mt-1 text-xs text-muted-foreground">{t.sub}</div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                <span className="font-medium text-slate-800">{u.short}</span>
+              </label>
+            );
+          })}
+        </div>
 
-      {/* 3. Bảng so sánh Kịch bản vs Cơ sở (#wi) */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">
-            Kịch bản đưa K01 đạt {formatPct(scenario.k01Pct)} ({fmtSigned(k01Diff, "%")} vs cơ sở)
-            và giữ K07 ở mức {formatPct(scenario.k07Pct)}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-sm">
+        {/* Thanh cảnh báo nếu vượt ngưỡng */}
+        {warnings.length > 0 ? (
+          <div className="mt-4 space-y-1 rounded-lg bg-[#f8e3e3] px-3.5 py-2.5 text-sm text-[#b83a3a]">
+            {warnings.map((w, i) => (
+              <div key={i} className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                <span>{w}</span>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {/* Bảng so sánh gọn gàng ngay trong card (giống hệt bảng T2..T6 & Tổng tuần trong ảnh) */}
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="py-2 pr-3">Chỉ tiêu</th>
-                <th className="py-2 px-3 text-right">Kịch bản</th>
-                <th className="py-2 px-3 text-right">Cơ sở</th>
-                <th className="py-2 px-3 text-right">Chênh lệch</th>
-                <th className="py-2 pl-3">Ý nghĩa</th>
+              <tr className="border-b border-slate-200 bg-slate-50/80 text-left text-xs font-semibold text-slate-500">
+                <th className="px-3 py-2.5">Trường / Chỉ tiêu</th>
+                <th className="px-3 py-2.5">Đổi ĐC</th>
+                <th className="px-3 py-2.5 text-right">Cơ sở (HS đỗ)</th>
+                <th className="px-3 py-2.5 text-right">Kịch bản (HS đỗ)</th>
+                <th className="px-3 py-2.5 text-right">Chênh lệch</th>
+                <th className="px-3 py-2.5 text-right">Vượt NS (K07)</th>
               </tr>
             </thead>
-            <tbody>
-              {comparisonRows.map((row) => (
-                <tr key={row.metric} className="border-b last:border-0">
-                  <td className="py-2.5 pr-3 font-medium">{row.metric}</td>
-                  <td className="py-2.5 px-3 text-right font-semibold tabular-nums">{row.scen}</td>
-                  <td className="py-2.5 px-3 text-right text-muted-foreground tabular-nums">
-                    {row.base}
-                  </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums">
-                    <Badge tone={row.tone}>{row.diff}</Badge>
-                  </td>
-                  <td className="py-2.5 pl-3 text-xs text-muted-foreground">{row.note}</td>
-                </tr>
-              ))}
+            <tbody className="divide-y divide-slate-100">
+              {ALL_UNIS.map((u) => {
+                const baseU = baseUniMap.get(u.code);
+                const scenU = scenUniMap.get(u.code);
+                const isShifted = checkedUnis.includes(u.code) && params.cutoffDelta !== 0;
+                const diff = (scenU?.admittedCount ?? 0) - (baseU?.admittedCount ?? 0);
+                return (
+                  <tr key={u.code} className="hover:bg-slate-50/70">
+                    <td className="px-3 py-2 font-medium text-slate-900">
+                      {u.short}{" "}
+                      <span className="text-xs font-normal text-slate-400">({u.code})</span>
+                    </td>
+                    <td className="px-3 py-2 text-slate-600">
+                      {isShifted ? fmtSigned(params.cutoffDelta, "đ", 1) : "–"}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-slate-600">
+                      {baseU?.admittedCount ?? 0}
+                    </td>
+                    <td className="px-3 py-2 text-right font-bold tabular-nums text-slate-900">
+                      {scenU?.admittedCount ?? 0}
+                    </td>
+                    <td
+                      className={cn(
+                        "px-3 py-2 text-right tabular-nums",
+                        diff > 0
+                          ? "text-emerald-700"
+                          : diff < 0
+                            ? "text-rose-700"
+                            : "text-slate-500",
+                      )}
+                    >
+                      {diff > 0 ? `+${diff}` : diff}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums text-slate-600">
+                      {scenU?.overBudgetCount ?? 0} HS
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {/* Các dòng tổng hợp cuối bảng (giống "Tổng tuần" trong ảnh) */}
+              <tr className="border-t-2 border-slate-200 bg-slate-50/50 font-semibold text-slate-900">
+                <td className="px-3 py-2.5">Tổng trúng tuyển (7 trường)</td>
+                <td className="px-3 py-2.5" />
+                <td className="px-3 py-2.5 text-right tabular-nums">
+                  {baseline.admittedTotalCount} ({formatPct(baseline.admittedTotalPct)})
+                </td>
+                <td className="px-3 py-2.5 text-right font-bold tabular-nums">
+                  {scenario.admittedTotalCount} ({formatPct(scenario.admittedTotalPct)})
+                </td>
+                <td className="px-3 py-2.5 text-right tabular-nums">
+                  {fmtSigned(scenario.admittedTotalCount - baseline.admittedTotalCount, " HS", 0)} (
+                  {fmtSigned(totalAdmDiff, "%")})
+                </td>
+                <td className="px-3 py-2.5 text-right tabular-nums">
+                  {scenario.overBudgetCount}/{scenario.costEvaluatedCount} HS
+                </td>
+              </tr>
+              <tr className="bg-slate-50/50 font-semibold text-slate-900">
+                <td className="px-3 py-2">K01 · Đỗ nhóm mục tiêu (NV1–NV3)</td>
+                <td className="px-3 py-2" />
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {baseline.admittedTop3Count} ({formatPct(baseline.k01Pct)})
+                </td>
+                <td className="px-3 py-2 text-right font-bold tabular-nums">
+                  {scenario.admittedTop3Count} ({formatPct(scenario.k01Pct)})
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {fmtSigned(scenario.admittedTop3Count - baseline.admittedTop3Count, " HS", 0)} (
+                  {fmtSigned(k01Diff, "%")})
+                </td>
+                <td className="px-3 py-2 text-right text-xs font-normal text-slate-500">
+                  NV1: {formatPct(scenario.nv1Pct)}
+                </td>
+              </tr>
+              <tr className="bg-slate-50/50 font-semibold text-slate-900">
+                <td className="px-3 py-2">K07 · Vượt ngân sách gia đình</td>
+                <td className="px-3 py-2" />
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {baseline.overBudgetCount} ({formatPct(baseline.k07Pct)})
+                </td>
+                <td className="px-3 py-2 text-right font-bold tabular-nums">
+                  {scenario.overBudgetCount} ({formatPct(scenario.k07Pct)})
+                </td>
+                <td className="px-3 py-2 text-right tabular-nums">
+                  {fmtSigned(scenario.overBudgetCount - baseline.overBudgetCount, " HS", 0)} (
+                  {k07Diff != null ? fmtSigned(k07Diff, "%") : "0%"})
+                </td>
+                <td className="px-3 py-2 text-right text-xs font-normal text-slate-500">
+                  K06: {formatVndShort(scenario.k06AvgCostVnd)}
+                </td>
+              </tr>
             </tbody>
           </table>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      {/* 4. Biểu đồ so sánh & đường cong độ nhạy */}
+      {/* 5 TILES TÓM TẮT (GIỐNG STEP 9 CANTEEN) */}
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {tiles.map((t) => (
+          <div
+            key={t.label}
+            className={cn("rounded-xl border border-slate-200 bg-white p-4 shadow-sm", t.border)}
+          >
+            <div className="flex items-center justify-between gap-1 text-xs text-slate-500">
+              <span>{t.label}</span>
+              <FormulaTooltip
+                title={t.label}
+                formula={t.formula}
+                threshold={t.threshold}
+                source="500 HS · 3.096 NV"
+              />
+            </div>
+            <div className="mt-1 text-2xl font-bold tabular-nums text-slate-900">{t.value}</div>
+            <div className="mt-1 text-xs text-slate-500">{t.sub}</div>
+          </div>
+        ))}
+      </section>
+
+      {/* BIỂU ĐỒ TRỰC QUAN (INSIGHT TITLES) */}
       <WhatIfCharts
         baseline={baseline}
         scenario={scenario}
@@ -563,159 +536,61 @@ export function WhatIfSimulator({ dataset }: { dataset: WhatIfDataset }) {
         budgetCurve={budgetCurve}
       />
 
-      {/* 5. Tác động theo 7 trường & Chuỗi suy diễn kịch bản */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">
-              {topUni
-                ? `${topUni.label} dẫn đầu với ${topUni.admittedCount}/${scenario.admittedTotalCount} HS trúng tuyển (${topUni.overBudgetCount} HS vượt ngân sách)`
-                : "Phân bố trúng tuyển theo 7 trường"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs text-muted-foreground">
-                  <th className="py-2 pr-3">Trường</th>
-                  <th className="py-2 px-3 text-right">Cơ sở</th>
-                  <th className="py-2 px-3 text-right">Kịch bản</th>
-                  <th className="py-2 px-3 text-right">Chênh lệch</th>
-                  <th className="py-2 pl-3 text-right">Vượt ngân sách</th>
-                </tr>
-              </thead>
-              <tbody>
-                {scenario.byUniversity.map((u) => {
-                  const b = baseUniMap.get(u.university_code);
-                  const diff = u.admittedCount - (b?.admittedCount ?? 0);
-                  return (
-                    <tr key={u.university_code} className="border-b last:border-0">
-                      <td className="py-2 pr-3 font-medium">{u.label}</td>
-                      <td className="py-2 px-3 text-right text-muted-foreground tabular-nums">
-                        {b?.admittedCount ?? 0}
-                      </td>
-                      <td className="py-2 px-3 text-right font-semibold tabular-nums">
-                        {u.admittedCount}
-                      </td>
-                      <td className="py-2 px-3 text-right tabular-nums">
-                        {diff === 0 ? "0" : fmtSigned(diff, "", 0)}
-                      </td>
-                      <td className="py-2 pl-3 text-right tabular-nums text-muted-foreground">
-                        {u.overBudgetCount} HS
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
+      {/* KHUYẾN NGHỊ DSS (IF–THEN) */}
+      <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <div>
+            <h3 className="flex items-center gap-2 text-base font-semibold text-slate-900">
+              <GitBranch className="size-4 text-[#1f5f8b]" />
+              Khuyến nghị DSS (IF–THEN)
+            </h3>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Quy tắc hành động kèm độ tin cậy ước lượng từ 500 học sinh và 3.096 nguyện vọng.
+            </p>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Chuỗi suy diễn &amp; Công thức mô phỏng</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <div className="rounded-lg border bg-muted/40 p-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Giả định đang xét
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          {whatIfInsights.rules.map((r) => (
+            <div
+              key={r.id}
+              className="flex flex-col justify-between rounded-xl border border-slate-200 p-4"
+            >
+              <div className="space-y-2.5">
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-medium",
+                    SOFT_BADGE.success,
+                  )}
+                >
+                  Confidence: {r.confidenceLabel} ({r.confidencePct}%)
+                </span>
+
+                <div className="rounded-lg border border-slate-200/70 bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                  <span className="mr-1.5 font-mono text-[11px] font-semibold uppercase text-slate-500">
+                    IF
+                  </span>
+                  {r.condition}
+                </div>
+
+                <div className="flex items-start gap-2 text-sm text-slate-900">
+                  <ArrowRight className="mt-0.5 size-4 shrink-0 text-[#1f5f8b]" />
+                  <div>
+                    <span className="mr-1.5 font-mono text-[11px] font-semibold uppercase text-[#1f5f8b]">
+                      THEN
+                    </span>
+                    <span className="font-semibold leading-snug">{r.action}</span>
+                  </div>
+                </div>
               </div>
-              <p className="mt-1">
-                {activePreset
-                  ? activePreset.assumption
-                  : `Điểm HS ${fmtSigned(params.scoreBonus, "đ", 2)}, điểm chuẩn (${SCOPE_LABELS[params.cutoffScope]}) ${fmtSigned(params.cutoffDelta, "đ", 2)}, ngân sách ${fmtSigned(params.budgetDeltaPct, "%", 0)}, chi phí ${fmtSigned(params.costDeltaPct, "%", 0)}.`}
+
+              <p className="mt-3 border-t border-slate-100 pt-2 text-xs text-slate-500">
+                <span className="font-medium text-slate-700">Tác động:</span> {r.impact}
               </p>
             </div>
-
-            <div className="space-y-2 font-mono text-xs">
-              <div className="flex gap-2 rounded-md border p-2">
-                <Badge tone="default">B1</Badge>
-                <span>
-                  Biên_điểm_mới = best_margin_30 + ({fmtSigned(params.scoreBonus, "", 2)}) −{" "}
-                  {params.cutoffDelta !== 0
-                    ? `${fmtSigned(params.cutoffDelta, "", 2)} [nếu thuộc ${params.cutoffScope}]`
-                    : "0"}{" "}
-                  − {params.quotaDeltaPct !== 0 ? `${(-(params.quotaDeltaPct / 10) * 0.25).toFixed(2)} (chỉ tiêu)` : "0"}
-                </span>
-              </div>
-              <div className="flex gap-2 rounded-md border p-2">
-                <Badge tone="default">B2</Badge>
-                <span>
-                  Đủ điều kiện NV: đã tốt nghiệp THPT ∧ Biên_điểm_mới ≥ 0 → chọn NV có thứ tự nhỏ
-                  nhất → K01 = {scenario.admittedTop3Count}/{scenario.totalStudents} (
-                  {formatPct(scenario.k01Pct)})
-                </span>
-              </div>
-              <div className="flex gap-2 rounded-md border p-2">
-                <Badge tone="default">B3</Badge>
-                <span>
-                  Ngân_sách_mới = Ngân_sách × {(1 + params.budgetDeltaPct / 100).toFixed(2)} ·
-                  Chi_phí_mới = Chi_phí × {(1 + params.costDeltaPct / 100).toFixed(2)} → K07 ={" "}
-                  {scenario.overBudgetCount}/{scenario.costEvaluatedCount} (
-                  {formatPct(scenario.k07Pct)})
-                </span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 6. Bảng đối chiếu 3 kịch bản chuẩn Bước 4 */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">
-            Thi bài thi phụ tăng K01 lên {formatPct(canonicalScenarios[0]?.result.k01Pct)}, còn NV
-            lót giữ {formatPct(canonicalScenarios[1]?.result.admittedTotalPct)} trúng tuyển khi
-            Top 1 tăng +1,0đ
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b text-left text-xs text-muted-foreground">
-                <th className="py-2 pr-3">Kịch bản</th>
-                <th className="py-2 px-3">Giả định</th>
-                <th className="py-2 px-3 text-right">K01 (NV1–NV3)</th>
-                <th className="py-2 px-3 text-right">Trúng tuyển chung</th>
-                <th className="py-2 px-3 text-right">K07 (Vượt NS)</th>
-                <th className="py-2 pl-3 text-right">Thử nhanh</th>
-              </tr>
-            </thead>
-            <tbody>
-              {canonicalScenarios.map(({ preset, result }) => (
-                <tr key={preset.id} className="border-b last:border-0">
-                  <td className="py-2.5 pr-3 font-medium">{preset.label}</td>
-                  <td className="py-2.5 px-3 text-xs text-muted-foreground">
-                    {preset.assumption}
-                  </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums">
-                    {formatPct(result.k01Pct)} ({result.admittedTop3Count}/{result.totalStudents})
-                  </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums">
-                    {formatPct(result.admittedTotalPct)} ({result.admittedTotalCount}/
-                    {result.totalStudents})
-                  </td>
-                  <td className="py-2.5 px-3 text-right tabular-nums">
-                    {formatPct(result.k07Pct)} ({result.overBudgetCount}/{result.costEvaluatedCount})
-                  </td>
-                  <td className="py-2.5 pl-3 text-right">
-                    <Button
-                      variant={presetId === preset.id ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => applyPreset(preset.id)}
-                    >
-                      {presetId === preset.id ? "Đang chọn" : "Áp dụng"}
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </CardContent>
-      </Card>
-      {/* 7. Khuyến nghị DSS (IF–THEN & Confidence) */}
-      <IfThenRulesCard rules={whatIfInsights.rules} title="Khuyến nghị DSS" />
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
-
